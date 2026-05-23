@@ -1,0 +1,26 @@
+# WordPress core
+wordpress/wp-admin/
+wordpress/wp-includes/
+
+# uploads
+wordpress/wp-content/uploads/
+
+# plugins
+wordpress/wp-content/plugins/
+
+# DB data
+docker/db-data/
+
+# cache/log junk
+*.log
+.DS_Store
+
+# ignore all themes...
+wordpress/wp-content/themes/*
+
+# ...except your custom one
+!wordpress/wp-content/themes/bvocalchorus/
+
+# optional: ignore vendor/node_modules if added later
+node_modules/
+vendor/

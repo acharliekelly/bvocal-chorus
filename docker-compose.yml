@@ -1,0 +1,43 @@
+name: wp-bvocal
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: vijlzimy_WPXFZ
+      MYSQL_USER: vijlzimy_WPXFZ
+      MYSQL_PASSWORD: '7fUm0]R)F9bAD^qnd'
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./docker/db-data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8091:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: vijlzimy_WPXFZ
+      WORDPRESS_DB_USER: vijlzimy_WPXFZ
+      WORDPRESS_DB_PASSWORD: '7fUm0]R)F9bAD^qnd'
+      WORDPRESS_TABLE_PREFIX: '3Ge_'
+    volumes:
+      - ./wordpress:/var/www/html
+  
+  wpcli:
+    image: wordpress:cli
+    user: xfs
+    depends_on:
+      - db
+      - wordpress
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: vijlzimy_WPXFZ
+      WORDPRESS_DB_USER: vijlzimy_WPXFZ
+      WORDPRESS_DB_PASSWORD: '7fUm0]R)F9bAD^qnd'
+    volumes:
+      - ./wordpress:/var/www/html
