@@ -1,0 +1,26 @@
+{
+  "apiVersion": 3,
+  "name": "bvocal/menu",
+  "title": "BVOCAL Menu",
+  "category": "theme",
+  "description": "Renders a classic WordPress menu by theme location with BVOCAL fallbacks.",
+  "textdomain": "bvocal",
+  "attributes": {
+    "location": {
+      "type": "string",
+      "default": "primary"
+    },
+    "memberContextOnly": {
+      "type": "boolean",
+      "default": false
+    },
+    "className": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": false
+  },
+  "render": "file:./render.php"
+}

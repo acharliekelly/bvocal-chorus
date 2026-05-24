@@ -1,0 +1,15 @@
+{
+  "apiVersion": 3,
+  "name": "bvocal/logo",
+  "title": "BVOCAL Logo",
+  "category": "theme",
+  "description": "Renders the WordPress custom logo, falling back to the bundled BVOCAL logo.",
+  "textdomain": "bvocal",
+  "attributes": {},
+  "supports": {
+    "html": false,
+    "align": false
+  },
+  "render": "file:./render.php"
+}
+

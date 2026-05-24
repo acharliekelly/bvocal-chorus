@@ -19,7 +19,8 @@ docker/db-data/
 wordpress/wp-content/themes/*
 
 # ...except your custom one
-!wordpress/wp-content/themes/bvocalchorus/
+!wordpress/wp-content/themes/bvocal/
+!wordpress/wp-content/themes/bvocal/**
 
 # optional: ignore vendor/node_modules if added later
 node_modules/
