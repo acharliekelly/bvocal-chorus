@@ -77,9 +77,9 @@
         },
         "typography": {
           "fontWeight": "900",
-          "lineHeight": "0.96",
+          "lineHeight": "1.05",
           "letterSpacing": "0",
-          "textTransform": "uppercase"
+          "textTransform": "none"
         }
       },
       "link": {
@@ -91,7 +91,7 @@
     "blocks": {
       "core/post-title": {
         "typography": {
-          "fontSize": "clamp(2.4rem, 7vw, 6rem)"
+          "fontSize": "clamp(2rem, 5vw, 4rem)"
         }
       },
       "core/quote": {

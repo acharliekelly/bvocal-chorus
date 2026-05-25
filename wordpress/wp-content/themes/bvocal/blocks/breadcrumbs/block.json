@@ -1,0 +1,15 @@
+{
+  "apiVersion": 3,
+  "name": "bvocal/breadcrumbs",
+  "title": "BVOCAL Breadcrumbs",
+  "category": "theme",
+  "description": "Renders breadcrumbs for pages, posts, archives, search, and 404 views.",
+  "textdomain": "bvocal",
+  "attributes": {},
+  "supports": {
+    "html": false,
+    "align": false
+  },
+  "render": "file:./render.php"
+}
+
