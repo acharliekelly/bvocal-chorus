@@ -132,6 +132,10 @@ header.wp-block-template-part > .bvocal-header {
   z-index: 30;
 }
 
+.bvocal-cta-sidebar .search-form {
+  margin-top: 1rem;
+}
+
 .bvocal-cta {
   background: var(--bvocal-white);
   border: 3px solid var(--bvocal-black);
