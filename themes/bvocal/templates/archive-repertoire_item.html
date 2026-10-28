@@ -1,0 +1,18 @@
+<!-- wp:template-part {"slug":"header","theme":"bvocal","tagName":"header"} /-->
+
+<!-- wp:bvocal/breadcrumbs /-->
+
+<!-- wp:group {"tagName":"main","className":"bvocal-page-shell","layout":{"type":"constrained"}} -->
+<main class="wp-block-group bvocal-page-shell">
+	<!-- wp:query-title {"type":"archive","className":"bvocal-page-title"} /-->
+	<!-- wp:query {"queryId":3,"query":{"perPage":100,"pages":0,"offset":0,"postType":"repertoire_item","order":"asc","orderBy":"title","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"bvocal-loop-query"} -->
+	<div class="wp-block-query bvocal-loop-query">
+		<!-- wp:post-template {"className":"bvocal-repertoire-index"} -->
+			<!-- wp:post-title {"isLink":true,"level":2} /-->
+		<!-- /wp:post-template -->
+	</div>
+	<!-- /wp:query -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","theme":"bvocal","tagName":"footer"} /-->
