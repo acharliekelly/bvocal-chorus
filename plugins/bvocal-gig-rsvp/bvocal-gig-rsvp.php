@@ -380,7 +380,7 @@ class BVOCAL_Gig_RSVP {
 
 	private function is_future_event( $event_id ) {
 		$start = get_post_meta( $event_id, '_EventStartDate', true );
-		return $start && strtotime( $start ) > current_time( 'timestamp' );
+		return $start > current_time( 'mysql' );
 	}
 
 	private function is_published_future_event( $event_id ) {

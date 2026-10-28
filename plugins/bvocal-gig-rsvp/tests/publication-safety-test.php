@@ -13,6 +13,7 @@ foreach (
 		"const META_ERROR",
 		'public function provision_after_event_save',
 		'update_post_meta( $event_id, self::META_ERROR',
+		"return \$start > current_time( 'mysql' );",
 	) as $expected
 ) {
 	if ( false === strpos( $source, $expected ) ) {
