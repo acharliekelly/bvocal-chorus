@@ -81,14 +81,19 @@ class BVOCAL_Gig_RSVP {
 			echo '<p>MailerLite is not connected yet. Add its API token before enabling an RSVP.</p>';
 			return;
 		}
+		$url = wp_nonce_url(
+			add_query_arg(
+				array(
+					'action'   => 'bvocal_rsvp_enable',
+					'event_id' => absint( $event_id ),
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'bvocal_rsvp_enable_' . $event_id
+		);
 		?>
 		<p>Create a separate MailerLite group for this Gig. RSVPs will appear here automatically.</p>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="bvocal_rsvp_enable">
-			<input type="hidden" name="event_id" value="<?php echo esc_attr( $event_id ); ?>">
-			<?php wp_nonce_field( 'bvocal_rsvp_enable_' . $event_id ); ?>
-			<?php submit_button( 'Enable RSVP for this Gig', 'secondary', 'submit', false ); ?>
-		</form>
+		<p><a class="button button-secondary" href="<?php echo esc_url( $url ); ?>">Enable RSVP for this Gig</a></p>
 		<?php
 	}
 
@@ -166,7 +171,7 @@ class BVOCAL_Gig_RSVP {
 	}
 
 	public function enable_rsvp() {
-		$event_id = isset( $_POST['event_id'] ) ? absint( $_POST['event_id'] ) : 0;
+		$event_id = isset( $_REQUEST['event_id'] ) ? absint( wp_unslash( $_REQUEST['event_id'] ) ) : 0;
 		$this->assert_manage_request( 'bvocal_rsvp_enable_' . $event_id );
 
 		if ( 'tribe_events' !== get_post_type( $event_id ) || get_post_meta( $event_id, self::META_GROUP_ID, true ) ) {
