@@ -28,6 +28,7 @@ services:
     volumes:
       - ./wordpress:/var/www/html
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
+      - ./plugins/bvocal-gig-rsvp:/var/www/html/wp-content/plugins/bvocal-gig-rsvp
   
   wpcli:
     image: wordpress:cli
@@ -43,3 +44,4 @@ services:
     volumes:
       - ./wordpress:/var/www/html
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
+      - ./plugins/bvocal-gig-rsvp:/var/www/html/wp-content/plugins/bvocal-gig-rsvp
