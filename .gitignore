@@ -1,12 +1,6 @@
-# WordPress core
-wordpress/wp-admin/
-wordpress/wp-includes/
-
-# uploads
-wordpress/wp-content/uploads/
-
-# plugins
-wordpress/wp-content/plugins/
+# Local WordPress installation, content, uploads, and third-party plugins.
+# Live content is refreshed locally; it is never committed.
+wordpress/
 
 # DB data
 docker/db-data/
@@ -15,13 +9,8 @@ docker/db-data/
 *.log
 .DS_Store
 
-# ignore all themes...
-wordpress/wp-content/themes/*
-
-# ...except your custom one
-!wordpress/wp-content/themes/bvocal/
-!wordpress/wp-content/themes/bvocal/**
-
 # optional: ignore vendor/node_modules if added later
 node_modules/
 vendor/
+.env
+.directory
