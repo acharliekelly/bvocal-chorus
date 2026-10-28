@@ -27,6 +27,7 @@ services:
       WORDPRESS_TABLE_PREFIX: '3Ge_'
     volumes:
       - ./wordpress:/var/www/html
+      - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
   
   wpcli:
     image: wordpress:cli
@@ -41,3 +42,4 @@ services:
       WORDPRESS_DB_PASSWORD: '7fUm0]R)F9bAD^qnd'
     volumes:
       - ./wordpress:/var/www/html
+      - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal

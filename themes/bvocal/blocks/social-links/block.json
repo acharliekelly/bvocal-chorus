@@ -1,0 +1,8 @@
+{
+  "apiVersion": 3,
+  "name": "bvocal/social-links",
+  "title": "BVOCAL Social Links",
+  "category": "theme",
+  "textdomain": "bvocal",
+  "render": "file:./render.php"
+}

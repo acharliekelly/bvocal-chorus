@@ -53,8 +53,63 @@ function bvocal_register_blocks() {
 	register_block_type( __DIR__ . '/blocks/menu' );
 	register_block_type( __DIR__ . '/blocks/logo' );
 	register_block_type( __DIR__ . '/blocks/breadcrumbs' );
+	register_block_type( __DIR__ . '/blocks/social-links' );
+	register_block_type( __DIR__ . '/blocks/cta-rail' );
 }
 add_action( 'init', 'bvocal_register_blocks' );
+
+function bvocal_get_theme_options() {
+	return wp_parse_args( get_option( 'bvocal_theme_options', array() ), array( 'youtube_url' => '', 'facebook_url' => '', 'instagram_url' => '' ) );
+}
+
+function bvocal_sanitize_theme_options( $options ) {
+	return array(
+		'youtube_url'   => isset( $options['youtube_url'] ) ? esc_url_raw( $options['youtube_url'] ) : '',
+		'facebook_url'  => isset( $options['facebook_url'] ) ? esc_url_raw( $options['facebook_url'] ) : '',
+		'instagram_url' => isset( $options['instagram_url'] ) ? esc_url_raw( $options['instagram_url'] ) : '',
+	);
+}
+
+function bvocal_register_theme_settings() {
+	register_setting( 'bvocal_theme_options', 'bvocal_theme_options', array( 'sanitize_callback' => 'bvocal_sanitize_theme_options' ) );
+	add_settings_section( 'bvocal_social_links', __( 'Social media links', 'bvocal' ), '__return_false', 'bvocal-theme-settings' );
+	foreach ( array( 'youtube_url' => 'YouTube', 'facebook_url' => 'Facebook', 'instagram_url' => 'Instagram' ) as $key => $label ) {
+		add_settings_field( $key, $label, 'bvocal_render_social_setting', 'bvocal-theme-settings', 'bvocal_social_links', array( 'key' => $key, 'label' => $label ) );
+	}
+}
+add_action( 'admin_init', 'bvocal_register_theme_settings' );
+
+function bvocal_render_social_setting( $args ) {
+	$options = bvocal_get_theme_options();
+	printf( '<input class="regular-text" type="url" name="bvocal_theme_options[%1$s]" value="%2$s" placeholder="https://..." aria-label="%3$s">', esc_attr( $args['key'] ), esc_attr( $options[ $args['key'] ] ), esc_attr( $args['label'] ) );
+}
+
+function bvocal_add_theme_settings_page() {
+	add_theme_page( __( 'BVOCAL Theme Settings', 'bvocal' ), __( 'BVOCAL Theme Settings', 'bvocal' ), 'manage_options', 'bvocal-theme-settings', 'bvocal_render_theme_settings_page' );
+}
+add_action( 'admin_menu', 'bvocal_add_theme_settings_page' );
+
+function bvocal_render_theme_settings_page() {
+	?>
+	<div class="wrap"><h1><?php esc_html_e( 'BVOCAL Theme Settings', 'bvocal' ); ?></h1><form action="options.php" method="post"><?php settings_fields( 'bvocal_theme_options' ); do_settings_sections( 'bvocal-theme-settings' ); submit_button(); ?></form></div>
+	<?php
+}
+
+function bvocal_render_social_links() {
+	$options = bvocal_get_theme_options();
+	$icons   = array(
+		'youtube_url' => array( 'YouTube', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/></svg>' ),
+		'facebook_url' => array( 'Facebook', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.8 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5H17V3.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V10H7.5v3h2.8v8h3.5Z"/></svg>' ),
+		'instagram_url' => array( 'Instagram', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5ZM17.8 6.3a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1Z"/></svg>' ),
+	);
+	$output = '';
+	foreach ( $icons as $key => $icon ) {
+		if ( ! empty( $options[ $key ] ) ) {
+			$output .= sprintf( '<a href="%1$s" class="bvocal-social-link" target="_blank" rel="noopener noreferrer"><span class="screen-reader-text">%2$s</span>%3$s</a>', esc_url( $options[ $key ] ), esc_html( $icon[0] ), $icon[1] );
+		}
+	}
+	return $output ? '<div class="bvocal-social-links" aria-label="Social media">' . $output . '</div>' : '';
+}
 
 function bvocal_render_logo_block() {
 	$custom_logo = get_custom_logo();
