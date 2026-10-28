@@ -17,9 +17,10 @@ token.
 ## Comms workflow
 
 1. Create an Event for the upcoming Gig.
-2. In its **Gig RSVP** panel, choose **Enable RSVP for this Gig**.
-3. The plugin creates a clearly named MailerLite group and appends the RSVP
-   form to that Gig's public event page.
+2. In its **Gig RSVP** panel, check **Enable RSVP for this Gig**, then publish
+   the future Event.
+3. After publication, the plugin creates a clearly named MailerLite group and
+   appends the RSVP form to that Gig's public event page.
 4. Responses are saved once per person per Gig. A later response updates that
    person's RSVP for the same Gig.
 5. After the Gig date has passed, the dashboard stops showing its public form
@@ -28,6 +29,13 @@ token.
 
 The future “create Past Event and add media” step is intentionally out of scope
 for this plugin version.
+
+## If MailerLite cannot create a group
+
+The Event still publishes, but the **Gig RSVP** dashboard shows a prominent
+error and a retry control. Until it succeeds, create a separate Google Form
+for that Gig and paste its responder link into the Event description so
+visitors can RSVP.
 
 ## Checks
 

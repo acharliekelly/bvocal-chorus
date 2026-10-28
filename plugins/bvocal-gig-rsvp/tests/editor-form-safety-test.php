@@ -14,4 +14,9 @@ if ( empty( $match[0] ) || false !== strpos( $match[0], '<form' ) ) {
 	exit( 1 );
 }
 
+if ( false === strpos( $source, 'name="bvocal_rsvp_requested"' ) ) {
+	fwrite( STDERR, "The Event-editor RSVP control must let an editor save RSVP intent with the Event.\n" );
+	exit( 1 );
+}
+
 echo "Event-editor RSVP control is form-safe.\n";
