@@ -470,8 +470,8 @@ header.wp-block-template-part > .bvocal-header {
 }
 
 .bvocal-repertoire__score {
-  aspect-ratio: 8.5 / 11;
   border: 1px solid var(--wp--preset--color--contrast-2, #d7d7d7);
+  height: min(68vh, 34rem);
   max-width: 52rem;
 }
 
