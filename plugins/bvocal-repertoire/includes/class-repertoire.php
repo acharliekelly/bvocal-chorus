@@ -83,6 +83,10 @@ class BVOCAL_Repertoire {
 		return $file_id ? 'https://drive.google.com/uc?export=download&id=' . rawurlencode( $file_id ) : $url;
 	}
 
+	public static function recording_preview_markup( $label, $url ) {
+		return '<li class="bvocal-repertoire__recording"><strong>' . esc_html( $label ) . '</strong><div class="bvocal-repertoire__recording-preview"><iframe title="' . esc_attr( $label . ' recording' ) . '" src="' . esc_url( self::drive_preview_url( $url ) ) . '" loading="lazy"></iframe></div><a class="bvocal-repertoire__recording-link" href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">Open in Google Drive</a></li>';
+	}
+
 	public static function render_information_box( $post ) {
 		wp_nonce_field( 'bvocal_save_repertoire', 'bvocal_repertoire_nonce' );
 		$fields = array(
@@ -216,7 +220,7 @@ class BVOCAL_Repertoire {
 			$output .= '<section><h2>Practice recordings</h2><ul>';
 			foreach ( $recordings as $recording ) {
 				$label = ! empty( $recording['label'] ) ? $recording['label'] : 'Open recording';
-				$output .= '<li class="bvocal-repertoire__recording"><strong>' . esc_html( $label ) . '</strong><audio controls preload="metadata" src="' . esc_url( self::drive_audio_url( $recording['url'] ) ) . '">Your browser cannot play this audio. <a href="' . esc_url( $recording['url'] ) . '" target="_blank" rel="noopener noreferrer">Open recording in Google Drive</a>.</audio><a class="bvocal-repertoire__recording-link" href="' . esc_url( $recording['url'] ) . '" target="_blank" rel="noopener noreferrer">Open in Google Drive</a></li>';
+				$output .= self::recording_preview_markup( $label, $recording['url'] );
 			}
 			$output .= '</ul></section>';
 		}

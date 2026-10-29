@@ -487,9 +487,15 @@ header.wp-block-template-part > .bvocal-header {
   margin-bottom: 1rem;
 }
 
-.bvocal-repertoire__recording audio {
-  max-width: 100%;
-  width: 32rem;
+.bvocal-repertoire__recording-preview {
+  height: 6rem;
+  max-width: 32rem;
+}
+
+.bvocal-repertoire__recording-preview iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .bvocal-repertoire__recording-link {
