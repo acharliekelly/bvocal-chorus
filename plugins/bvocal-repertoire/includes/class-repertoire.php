@@ -63,6 +63,26 @@ class BVOCAL_Repertoire {
 		return get_post_meta( $post_id, self::META_PREFIX . $key, true );
 	}
 
+	public static function drive_file_id( $url ) {
+		if ( preg_match( '#drive\.google\.com/file/d/([^/?]+)#', $url, $matches ) ) {
+			return $matches[1];
+		}
+		if ( preg_match( '#(?:[?&])id=([^&]+)#', $url, $matches ) ) {
+			return $matches[1];
+		}
+		return '';
+	}
+
+	public static function drive_preview_url( $url ) {
+		$file_id = self::drive_file_id( $url );
+		return $file_id ? 'https://drive.google.com/file/d/' . rawurlencode( $file_id ) . '/preview' : $url;
+	}
+
+	public static function drive_audio_url( $url ) {
+		$file_id = self::drive_file_id( $url );
+		return $file_id ? 'https://drive.google.com/uc?export=download&id=' . rawurlencode( $file_id ) : $url;
+	}
+
 	public static function render_information_box( $post ) {
 		wp_nonce_field( 'bvocal_save_repertoire', 'bvocal_repertoire_nonce' );
 		$fields = array(
@@ -189,14 +209,14 @@ class BVOCAL_Repertoire {
 		}
 		$score_url = self::value( $post_id, 'score_url' );
 		if ( $score_url ) {
-			$output .= '<section><h2>Score</h2><p><a href="' . esc_url( $score_url ) . '" target="_blank" rel="noopener noreferrer">Open score PDF</a></p></section>';
+			$output .= '<section><h2>Score</h2><div class="bvocal-repertoire__score"><iframe title="' . esc_attr( get_the_title( $post_id ) . ' score' ) . '" src="' . esc_url( self::drive_preview_url( $score_url ) ) . '" loading="lazy"></iframe></div><p><a href="' . esc_url( $score_url ) . '" target="_blank" rel="noopener noreferrer">Open score PDF in Google Drive</a></p></section>';
 		}
 		$recordings = self::value( $post_id, 'recordings' );
 		if ( is_array( $recordings ) && $recordings ) {
 			$output .= '<section><h2>Practice recordings</h2><ul>';
 			foreach ( $recordings as $recording ) {
 				$label = ! empty( $recording['label'] ) ? $recording['label'] : 'Open recording';
-				$output .= '<li><a href="' . esc_url( $recording['url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a></li>';
+				$output .= '<li class="bvocal-repertoire__recording"><strong>' . esc_html( $label ) . '</strong><audio controls preload="metadata" src="' . esc_url( self::drive_audio_url( $recording['url'] ) ) . '">Your browser cannot play this audio. <a href="' . esc_url( $recording['url'] ) . '" target="_blank" rel="noopener noreferrer">Open recording in Google Drive</a>.</audio><a class="bvocal-repertoire__recording-link" href="' . esc_url( $recording['url'] ) . '" target="_blank" rel="noopener noreferrer">Open in Google Drive</a></li>';
 			}
 			$output .= '</ul></section>';
 		}

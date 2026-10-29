@@ -469,6 +469,33 @@ header.wp-block-template-part > .bvocal-header {
   white-space: normal;
 }
 
+.bvocal-repertoire__score {
+  aspect-ratio: 8.5 / 11;
+  border: 1px solid var(--wp--preset--color--contrast-2, #d7d7d7);
+  max-width: 52rem;
+}
+
+.bvocal-repertoire__score iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.bvocal-repertoire__recording {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.bvocal-repertoire__recording audio {
+  max-width: 100%;
+  width: 32rem;
+}
+
+.bvocal-repertoire__recording-link {
+  font-size: 0.9rem;
+}
+
 .bvocal-footer {
   background: var(--bvocal-black);
   color: var(--bvocal-white);
