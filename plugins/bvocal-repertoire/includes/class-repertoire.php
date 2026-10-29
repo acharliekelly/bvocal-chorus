@@ -19,6 +19,7 @@ class BVOCAL_Repertoire {
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_meta_boxes' ) );
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'keep_incomplete_item_as_draft' ), 10, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'render_author_required_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_media_validation_notice' ) );
 		add_filter( 'the_content', array( __CLASS__, 'append_public_details' ) );
 		add_action( 'admin_footer-post.php', array( __CLASS__, 'render_recording_repeater_script' ) );
 		add_action( 'admin_footer-post-new.php', array( __CLASS__, 'render_recording_repeater_script' ) );
@@ -92,6 +93,38 @@ class BVOCAL_Repertoire {
 		return '<button type="button" class="button bvocal-media-picker" data-target="' . esc_attr( $target ) . '" data-media-type="' . esc_attr( $media_type ) . '">' . esc_html( $label ) . '</button>';
 	}
 
+	public static function validate_media_url( $url, $expected_type ) {
+		global $wpdb;
+
+		$url = esc_url_raw( $url );
+		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+			return new WP_Error( 'invalid_url', 'Enter a valid media URL.' );
+		}
+		if ( false !== strpos( $url, '/folders/' ) ) {
+			return new WP_Error( 'folder_url', 'Use a file, not a Google Drive folder.' );
+		}
+		$attachment_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND guid = %s LIMIT 1",
+				$url
+			)
+		);
+		if ( ! $attachment_id && self::drive_file_id( $url ) ) {
+			$attachment_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND guid LIKE %s LIMIT 1",
+					'%' . $wpdb->esc_like( self::drive_file_id( $url ) ) . '%'
+				)
+			);
+		}
+		if ( ! $attachment_id ) {
+			return new WP_Error( 'unknown_media', 'Choose a file from the Media Library or use the exact URL of a catalogued media item.' );
+		}
+		$mime_type = get_post_mime_type( $attachment_id );
+		$is_valid  = 'application/pdf' === $expected_type ? 'application/pdf' === $mime_type : 0 === strpos( (string) $mime_type, 'audio/' );
+		return $is_valid ? true : new WP_Error( 'wrong_type', 'Choose the correct file type for this field.' );
+	}
+
 	public static function render_information_box( $post ) {
 		wp_nonce_field( 'bvocal_save_repertoire', 'bvocal_repertoire_nonce' );
 		$fields = array(
@@ -121,7 +154,7 @@ class BVOCAL_Repertoire {
 		$score_url  = self::value( $post->ID, 'score_url' );
 		$recordings = self::value( $post->ID, 'recordings' );
 		$recordings = is_array( $recordings ) ? $recordings : array();
-		echo '<p>Use Google Drive links. Files remain in Drive; WordPress only links to them.</p>';
+		echo '<p>Choose a file from the Media Library (including GDC) or use the exact URL of a catalogued media item. Files remain in Drive; WordPress only links to them.</p>';
 		printf( '<p><label for="bvocal-repertoire-score"><strong>Score PDF link</strong></label><br><input class="large-text" type="url" id="bvocal-repertoire-score" name="bvocal_repertoire[score_url]" value="%s" placeholder="https://drive.google.com/..."> %s</p>', esc_attr( $score_url ), self::media_picker_button( 'bvocal-repertoire-score', 'application/pdf' ) );
 		echo '<p><strong>Practice recordings</strong></p><div id="bvocal-repertoire-recordings">';
 		foreach ( $recordings as $recording ) {
@@ -159,6 +192,20 @@ class BVOCAL_Repertoire {
 			$data['post_status'] = 'draft';
 			add_filter( 'redirect_post_location', array( __CLASS__, 'add_author_required_notice' ) );
 		}
+		$submitted = isset( $_POST['bvocal_repertoire'] ) && is_array( $_POST['bvocal_repertoire'] ) ? wp_unslash( $_POST['bvocal_repertoire'] ) : array();
+		$score_url = isset( $submitted['score_url'] ) ? $submitted['score_url'] : '';
+		if ( '' !== $score_url && is_wp_error( self::validate_media_url( $score_url, 'application/pdf' ) ) ) {
+			$data['post_status'] = 'draft';
+			add_filter( 'redirect_post_location', array( __CLASS__, 'add_media_validation_notice' ) );
+		}
+		$recording_urls = isset( $submitted['recording_url'] ) && is_array( $submitted['recording_url'] ) ? $submitted['recording_url'] : array();
+		foreach ( $recording_urls as $recording_url ) {
+			if ( '' !== $recording_url && is_wp_error( self::validate_media_url( $recording_url, 'audio' ) ) ) {
+				$data['post_status'] = 'draft';
+				add_filter( 'redirect_post_location', array( __CLASS__, 'add_media_validation_notice' ) );
+				break;
+			}
+		}
 		return $data;
 	}
 
@@ -173,6 +220,17 @@ class BVOCAL_Repertoire {
 		echo '<div class="notice notice-error"><p>A Repertoire Item needs an author before it can be published. It has been kept as a draft.</p></div>';
 	}
 
+	public static function add_media_validation_notice( $location ) {
+		return add_query_arg( 'bvocal_repertoire_error', 'media_invalid', $location );
+	}
+
+	public static function render_media_validation_notice() {
+		if ( ! isset( $_GET['bvocal_repertoire_error'] ) || 'media_invalid' !== $_GET['bvocal_repertoire_error'] ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>Score and recording links must be catalogued Media Library files of the correct type. Google Drive folders and unknown URLs cannot be saved.</p></div>';
+	}
+
 	public static function save_meta_boxes( $post_id ) {
 		if ( ! isset( $_POST['bvocal_repertoire_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bvocal_repertoire_nonce'] ) ), 'bvocal_save_repertoire' ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
@@ -181,14 +239,17 @@ class BVOCAL_Repertoire {
 		foreach ( array( 'author', 'lyricist', 'arranger', 'language', 'notes', 'lyrics' ) as $key ) {
 			update_post_meta( $post_id, self::META_PREFIX . $key, isset( $submitted[ $key ] ) ? sanitize_textarea_field( $submitted[ $key ] ) : '' );
 		}
-		update_post_meta( $post_id, self::META_PREFIX . 'score_url', isset( $submitted['score_url'] ) ? esc_url_raw( $submitted['score_url'] ) : '' );
+		$score_url = isset( $submitted['score_url'] ) ? esc_url_raw( $submitted['score_url'] ) : '';
+		if ( '' === $score_url || ! is_wp_error( self::validate_media_url( $score_url, 'application/pdf' ) ) ) {
+			update_post_meta( $post_id, self::META_PREFIX . 'score_url', $score_url );
+		}
 		$recordings = array();
 		$labels     = isset( $submitted['recording_label'] ) && is_array( $submitted['recording_label'] ) ? $submitted['recording_label'] : array();
 		$urls       = isset( $submitted['recording_url'] ) && is_array( $submitted['recording_url'] ) ? $submitted['recording_url'] : array();
 		foreach ( $urls as $index => $url ) {
 			$url   = esc_url_raw( $url );
 			$label = isset( $labels[ $index ] ) ? sanitize_text_field( $labels[ $index ] ) : '';
-			if ( '' !== $url ) {
+			if ( '' !== $url && ! is_wp_error( self::validate_media_url( $url, 'audio' ) ) ) {
 				$recordings[] = array( 'label' => $label, 'url' => $url );
 			}
 		}
@@ -200,21 +261,22 @@ class BVOCAL_Repertoire {
 			return $content;
 		}
 		$post_id = get_the_ID();
-		$details = array_filter(
-			array(
-				'Author'   => self::value( $post_id, 'author' ),
-				'Lyricist' => self::value( $post_id, 'lyricist' ),
-				'Arranger' => self::value( $post_id, 'arranger' ),
-				'Language' => self::value( $post_id, 'language' ),
-			)
-		);
+		$author   = self::value( $post_id, 'author' );
+		$lyricist = self::value( $post_id, 'lyricist' );
+		$arranger = self::value( $post_id, 'arranger' );
 		$output = '<div class="bvocal-repertoire">';
-		if ( $details ) {
-			$output .= '<dl class="bvocal-repertoire__details">';
-			foreach ( $details as $label => $value ) {
-				$output .= '<dt>' . esc_html( $label ) . '</dt><dd>' . esc_html( $value ) . '</dd>';
-			}
-			$output .= '</dl>';
+		$credits = array();
+		if ( $author ) {
+			$credits[] = 'By ' . esc_html( $author );
+		}
+		if ( $arranger ) {
+			$credits[] = 'arr. ' . esc_html( $arranger );
+		}
+		if ( $lyricist ) {
+			$credits[] = 'lyrics by ' . esc_html( $lyricist );
+		}
+		if ( $credits ) {
+			$output .= '<p class="bvocal-repertoire__credits">' . implode( ', ', $credits ) . '</p>';
 		}
 		$notes = self::value( $post_id, 'notes' );
 		if ( $notes ) {
