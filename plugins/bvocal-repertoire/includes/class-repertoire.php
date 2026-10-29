@@ -22,6 +22,7 @@ class BVOCAL_Repertoire {
 		add_filter( 'the_content', array( __CLASS__, 'append_public_details' ) );
 		add_action( 'admin_footer-post.php', array( __CLASS__, 'render_recording_repeater_script' ) );
 		add_action( 'admin_footer-post-new.php', array( __CLASS__, 'render_recording_repeater_script' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_media_picker' ) );
 	}
 
 	public static function post_type_definition() {
@@ -87,6 +88,10 @@ class BVOCAL_Repertoire {
 		return '<li class="bvocal-repertoire__recording"><strong>' . esc_html( $label ) . '</strong><div class="bvocal-repertoire__recording-preview"><iframe title="' . esc_attr( $label . ' recording' ) . '" src="' . esc_url( self::drive_preview_url( $url ) ) . '" loading="lazy"></iframe></div><a class="bvocal-repertoire__recording-link" href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">Open in Google Drive</a></li>';
 	}
 
+	public static function media_picker_button( $target, $media_type, $label = 'Choose from Media Library' ) {
+		return '<button type="button" class="button bvocal-media-picker" data-target="' . esc_attr( $target ) . '" data-media-type="' . esc_attr( $media_type ) . '">' . esc_html( $label ) . '</button>';
+	}
+
 	public static function render_information_box( $post ) {
 		wp_nonce_field( 'bvocal_save_repertoire', 'bvocal_repertoire_nonce' );
 		$fields = array(
@@ -117,7 +122,7 @@ class BVOCAL_Repertoire {
 		$recordings = self::value( $post->ID, 'recordings' );
 		$recordings = is_array( $recordings ) ? $recordings : array();
 		echo '<p>Use Google Drive links. Files remain in Drive; WordPress only links to them.</p>';
-		printf( '<p><label for="bvocal-repertoire-score"><strong>Score PDF link</strong></label><br><input class="large-text" type="url" id="bvocal-repertoire-score" name="bvocal_repertoire[score_url]" value="%s" placeholder="https://drive.google.com/..."></p>', esc_attr( $score_url ) );
+		printf( '<p><label for="bvocal-repertoire-score"><strong>Score PDF link</strong></label><br><input class="large-text" type="url" id="bvocal-repertoire-score" name="bvocal_repertoire[score_url]" value="%s" placeholder="https://drive.google.com/..."> %s</p>', esc_attr( $score_url ), self::media_picker_button( 'bvocal-repertoire-score', 'application/pdf' ) );
 		echo '<p><strong>Practice recordings</strong></p><div id="bvocal-repertoire-recordings">';
 		foreach ( $recordings as $recording ) {
 			self::render_recording_row( $recording );
@@ -131,7 +136,15 @@ class BVOCAL_Repertoire {
 	private static function render_recording_row( $recording ) {
 		$label = isset( $recording['label'] ) ? $recording['label'] : '';
 		$url   = isset( $recording['url'] ) ? $recording['url'] : '';
-		printf( '<p class="bvocal-recording-row"><label>Label <input type="text" name="bvocal_repertoire[recording_label][]" value="%1$s" placeholder="e.g. Alto practice track"></label> <label>Google Drive MP3 link <input class="regular-text" type="url" name="bvocal_repertoire[recording_url][]" value="%2$s" placeholder="https://drive.google.com/..."></label> <button type="button" class="button-link-delete bvocal-remove-recording">Remove</button></p>', esc_attr( $label ), esc_attr( $url ) );
+		printf( '<p class="bvocal-recording-row"><label>Label <input type="text" name="bvocal_repertoire[recording_label][]" value="%1$s" placeholder="e.g. Alto practice track"></label> <label>Google Drive MP3 link <input class="regular-text" type="url" name="bvocal_repertoire[recording_url][]" value="%2$s" placeholder="https://drive.google.com/..."></label> %3$s <button type="button" class="button-link-delete bvocal-remove-recording">Remove</button></p>', esc_attr( $label ), esc_attr( $url ), self::media_picker_button( '', 'audio' ) );
+	}
+
+	public static function enqueue_media_picker() {
+		$screen = get_current_screen();
+		if ( ! $screen || self::POST_TYPE !== $screen->post_type ) {
+			return;
+		}
+		wp_enqueue_media();
 	}
 
 	public static function keep_incomplete_item_as_draft( $data, $postarr ) {
@@ -240,6 +253,26 @@ class BVOCAL_Repertoire {
 				}
 				if (event.target.classList.contains('bvocal-remove-recording')) {
 					event.target.closest('.bvocal-recording-row').remove();
+				}
+				if (event.target.classList.contains('bvocal-media-picker')) {
+					var button = event.target;
+					var row = button.closest('.bvocal-recording-row');
+					var target = button.dataset.target ? document.getElementById(button.dataset.target) : row.querySelector('input[name="bvocal_repertoire[recording_url][]"]');
+					var label = row ? row.querySelector('input[name="bvocal_repertoire[recording_label][]"]') : null;
+					var frame = wp.media({
+						title: button.dataset.mediaType === 'audio' ? 'Choose practice recording' : 'Choose score PDF',
+						button: { text: 'Use this file' },
+						multiple: false,
+						library: { type: button.dataset.mediaType }
+					});
+					frame.on('select', function () {
+						var attachment = frame.state().get('selection').first().toJSON();
+						target.value = attachment.url;
+						if (label && !label.value && attachment.title) {
+							label.value = attachment.title;
+						}
+					});
+					frame.open();
 				}
 			});
 		</script>
