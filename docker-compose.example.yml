@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: vijlzimy_WPXFZ
-      MYSQL_USER: vijlzimy_WPXFZ
-      MYSQL_PASSWORD: '7fUm0]R)F9bAD^qnd'
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bvocal_local
+      MYSQL_USER: bvocal
+      MYSQL_PASSWORD: change-this-local-password
+      MYSQL_ROOT_PASSWORD: change-this-root-password
     volumes:
       - ./docker/db-data:/var/lib/mysql
 
@@ -21,16 +21,16 @@ services:
       - "8091:80"
     environment:
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: vijlzimy_WPXFZ
-      WORDPRESS_DB_USER: vijlzimy_WPXFZ
-      WORDPRESS_DB_PASSWORD: '7fUm0]R)F9bAD^qnd'
-      WORDPRESS_TABLE_PREFIX: '3Ge_'
+      WORDPRESS_DB_NAME: bvocal_local
+      WORDPRESS_DB_USER: bvocal
+      WORDPRESS_DB_PASSWORD: change-this-local-password
+      WORDPRESS_TABLE_PREFIX: wp_
     volumes:
       - ./wordpress:/var/www/html
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
       - ./plugins/bvocal-gig-rsvp:/var/www/html/wp-content/plugins/bvocal-gig-rsvp
       - ./plugins/bvocal-repertoire:/var/www/html/wp-content/plugins/bvocal-repertoire
-  
+
   wpcli:
     image: wordpress:cli
     user: xfs
@@ -39,9 +39,9 @@ services:
       - wordpress
     environment:
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: vijlzimy_WPXFZ
-      WORDPRESS_DB_USER: vijlzimy_WPXFZ
-      WORDPRESS_DB_PASSWORD: '7fUm0]R)F9bAD^qnd'
+      WORDPRESS_DB_NAME: bvocal_local
+      WORDPRESS_DB_USER: bvocal
+      WORDPRESS_DB_PASSWORD: change-this-local-password
     volumes:
       - ./wordpress:/var/www/html
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal

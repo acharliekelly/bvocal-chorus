@@ -4,10 +4,16 @@ This repository contains custom BVOCAL code only:
 
 - `themes/bvocal/` is the custom theme.
 - `plugins/` is reserved for future custom plugins.
-- `wordpress/` and `docker/db-data/` are local-only WordPress and database data.
+- `wordpress/`, `docker/db-data/`, and `docker-compose.yml` are local-only
+  WordPress, database, and machine configuration.
+
+Before starting a new local installation, copy `docker-compose.example.yml` to
+`docker-compose.yml` and replace its placeholder database passwords with
+local-only values. The real Compose file is ignored and must never be
+committed.
 
 Start the local site with `docker compose up -d`. Docker mounts the tracked
-theme into the ignored local WordPress installation.
+theme and custom plugins into the ignored local WordPress installation.
 
 ## Content rule
 
