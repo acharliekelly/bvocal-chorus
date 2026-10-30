@@ -29,6 +29,7 @@ class BVOCAL_Gig_RSVP {
 		add_action( 'wp_after_insert_post', array( $this, 'provision_after_event_save' ), 20, 4 );
 		add_action( 'admin_post_bvocal_rsvp_enable', array( $this, 'enable_rsvp' ) );
 		add_action( 'admin_post_bvocal_rsvp_delete_group', array( $this, 'delete_group' ) );
+		add_action( 'admin_post_bvocal_rsvp_confirm_delete_group', array( $this, 'confirm_upcoming_group_deletion' ) );
 		add_action( 'admin_post_bvocal_rsvp_submit', array( $this, 'submit_rsvp' ) );
 		add_action( 'admin_post_nopriv_bvocal_rsvp_submit', array( $this, 'submit_rsvp' ) );
 		add_filter( 'the_content', array( $this, 'append_form_to_event' ) );
@@ -137,7 +138,9 @@ class BVOCAL_Gig_RSVP {
 		if ( ! $this->can_manage() ) {
 			return;
 		}
-		$events = get_posts(
+		$events = $this->dashboard_events();
+		?>
+		<div class="wrap">
 			array(
 				'post_type'      => 'tribe_events',
 				'post_status'    => 'any',
@@ -146,9 +149,6 @@ class BVOCAL_Gig_RSVP {
 				'orderby'        => 'meta_value',
 				'order'          => 'ASC',
 			)
-		);
-		?>
-		<div class="wrap">
 			<h1>Gig RSVP</h1>
 			<p>Each Gig has its own MailerLite group, so updates go only to people who signed up for that action.</p>
 			<?php $this->render_admin_notice(); ?>
@@ -158,8 +158,7 @@ class BVOCAL_Gig_RSVP {
 			<?php if ( empty( $events ) ) : ?>
 				<p>No Gig events are available yet. Create an Event in the calendar, then return here to enable its RSVP.</p>
 			<?php else : ?>
-				<table class="widefat striped">
-					<thead><tr><th>Gig</th><th>Date</th><th>MailerLite group</th><th>RSVPs</th><th>Action</th></tr></thead>
+				<table class="widefat striped"><thead><tr><th><?php echo $this->sort_link( 'title', 'Gig' ); ?></th><th><?php echo $this->sort_link( 'date', 'Date' ); ?></th><th><?php echo $this->sort_link( 'group', 'MailerLite group' ); ?></th><th><?php echo $this->sort_link( 'rsvps', 'RSVPs' ); ?></th><th>Action</th></tr></thead>
 					<tbody>
 					<?php foreach ( $events as $event ) : ?>
 						<?php $this->render_event_row( $event ); ?>
@@ -171,6 +170,15 @@ class BVOCAL_Gig_RSVP {
 		</div>
 		<?php
 	}
+
+	private function dashboard_events() {
+		$events = get_posts( array( 'post_type' => 'tribe_events', 'post_status' => 'any', 'posts_per_page' => -1 ) );
+		$events = array_filter( $events, function( $event ) { return ! ( $this->is_past_event( $event->ID ) && ! get_post_meta( $event->ID, self::META_GROUP_ID, true ) ); } );
+		return $this->sort_events( $events );
+	}
+	private function is_past_event( $event_id ) { $date = $this->event_date( $event_id ); return $date && strtotime( $date . ' 23:59:59' ) < current_time( 'timestamp' ); }
+	private function sort_events( $events ) { $by = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : ''; usort( $events, function( $a, $b ) use ( $by ) { if ( $by ) { $av = 'rsvps' === $by ? $this->rsvp_count( $a->ID ) : ( 'group' === $by ? get_post_meta( $a->ID, self::META_GROUP_NAME, true ) : ( 'date' === $by ? $this->event_date( $a->ID ) : get_the_title( $a->ID ) ) ); $bv = 'rsvps' === $by ? $this->rsvp_count( $b->ID ) : ( 'group' === $by ? get_post_meta( $b->ID, self::META_GROUP_NAME, true ) : ( 'date' === $by ? $this->event_date( $b->ID ) : get_the_title( $b->ID ) ) ); return strnatcasecmp( (string) $av, (string) $bv ); } $pa = $this->is_past_event( $a->ID ) && get_post_meta( $a->ID, self::META_GROUP_ID, true ) ? 0 : ( $this->is_published_future_event( $a->ID ) && ! get_post_meta( $a->ID, self::META_GROUP_ID, true ) ? 1 : 2 ); $pb = $this->is_past_event( $b->ID ) && get_post_meta( $b->ID, self::META_GROUP_ID, true ) ? 0 : ( $this->is_published_future_event( $b->ID ) && ! get_post_meta( $b->ID, self::META_GROUP_ID, true ) ? 1 : 2 ); return $pa === $pb ? strcmp( $this->event_date( $b->ID ), $this->event_date( $a->ID ) ) : $pa <=> $pb; } ); return $events; }
+	private function sort_link( $key, $label ) { return '<a href="' . esc_url( add_query_arg( 'orderby', $key ) ) . '">' . esc_html( $label ) . '</a>'; }
 
 	private function render_event_row( $event ) {
 		$event_id    = $event->ID;
@@ -207,7 +215,8 @@ class BVOCAL_Gig_RSVP {
 						<?php submit_button( 'Delete RSVP group', 'delete', 'submit', false ); ?>
 					</form>
 				<?php elseif ( $group_id ) : ?>
-					<span>Group ready</span>
+					<?php $confirm_url = wp_nonce_url( add_query_arg( array( 'action' => 'bvocal_rsvp_confirm_delete_group', 'event_id' => $event_id ), admin_url( 'admin-post.php' ) ), 'bvocal_rsvp_confirm_delete_group_' . $event_id ); ?>
+					<a class="button button-link-delete" href="<?php echo esc_url( $confirm_url ); ?>">Delete group…</a>
 				<?php elseif ( $is_ready && $error ) : ?>
 					<?php $this->render_enable_button( $event_id, 'Retry MailerLite RSVP' ); ?>
 				<?php elseif ( $is_ready && ! $deleted_at ) : ?>
@@ -261,7 +270,8 @@ class BVOCAL_Gig_RSVP {
 		$group_id = get_post_meta( $event_id, self::META_GROUP_ID, true );
 		$date     = $this->event_date( $event_id );
 
-		if ( ! $group_id || ! $date || strtotime( $date . ' 23:59:59' ) >= current_time( 'timestamp' ) ) {
+		$future_confirmed = ! empty( $_POST['bvocal_rsvp_confirm_future_delete'] );
+		if ( ! $group_id || ! $date || ( strtotime( $date . ' 23:59:59' ) >= current_time( 'timestamp' ) && ! $future_confirmed ) ) {
 			$this->redirect_with_notice( 'RSVP groups can only be deleted manually after the Gig has passed.', 'error' );
 		}
 
@@ -274,6 +284,15 @@ class BVOCAL_Gig_RSVP {
 		delete_post_meta( $event_id, self::META_ENABLED );
 		update_post_meta( $event_id, self::META_GROUP_DELETED, current_time( 'Y-m-d H:i:s' ) );
 		$this->redirect_with_notice( 'MailerLite group deleted. RSVP records remain available locally.', 'success' );
+	}
+
+	public function confirm_upcoming_group_deletion() {
+		$event_id = isset( $_GET['event_id'] ) ? absint( wp_unslash( $_GET['event_id'] ) ) : 0;
+		$this->assert_manage_request( 'bvocal_rsvp_confirm_delete_group_' . $event_id );
+		if ( ! get_post_meta( $event_id, self::META_GROUP_ID, true ) || $this->is_past_event( $event_id ) ) { $this->redirect_with_notice( 'This group cannot use the upcoming-Gig confirmation.', 'error' ); }
+		?>
+		<div class="wrap"><h1>Delete upcoming Gig RSVP group?</h1><p><strong><?php echo esc_html( get_the_title( $event_id ) ); ?></strong> has <?php echo esc_html( (string) $this->rsvp_count( $event_id ) ); ?> RSVP(s).</p><p>Deleting this MailerLite group cannot be undone. Subscribers and local RSVP records will remain.</p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="bvocal_rsvp_delete_group"><input type="hidden" name="event_id" value="<?php echo esc_attr( $event_id ); ?>"><input type="hidden" name="bvocal_rsvp_confirm_future_delete" value="1"><?php wp_nonce_field( 'bvocal_rsvp_delete_group_' . $event_id ); submit_button( 'Delete RSVP group', 'delete' ); ?></form><p><a href="<?php echo esc_url( admin_url( 'admin.php?page=bvocal-gig-rsvp' ) ); ?>">Cancel</a></p></div>
+		<?php exit;
 	}
 
 	public function append_form_to_event( $content ) {
