@@ -5,6 +5,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class BVOCAL_Guide_Source {
+	public static function discover() {
+		$root = dirname( __DIR__, 3 );
+		$paths = array_merge( array( $root . '/themes/bvocal/KB.md' ), glob( $root . '/plugins/bvocal-*/KB.md' ) ?: array() );
+		$documents = array();
+		foreach ( $paths as $path ) {
+			if ( is_readable( $path ) ) { $documents[] = self::parse_document( ltrim( str_replace( $root, '', $path ), '/' ), file_get_contents( $path ) ); }
+		}
+		return $documents;
+	}
 	public static function parse_document( $identity, $markdown ) {
 		$markdown = trim( (string) $markdown );
 		if ( ! preg_match( '/^#\s+(.+)$/m', $markdown, $matches ) || 0 !== strpos( $markdown, '# ' ) ) {
