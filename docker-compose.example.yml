@@ -30,6 +30,7 @@ services:
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
       - ./plugins/bvocal-gig-rsvp:/var/www/html/wp-content/plugins/bvocal-gig-rsvp
       - ./plugins/bvocal-repertoire:/var/www/html/wp-content/plugins/bvocal-repertoire
+      - ./plugins/bvocal-volunteer-guide:/var/www/html/wp-content/plugins/bvocal-volunteer-guide
 
   wpcli:
     image: wordpress:cli
@@ -47,3 +48,4 @@ services:
       - ./themes/bvocal:/var/www/html/wp-content/themes/bvocal
       - ./plugins/bvocal-gig-rsvp:/var/www/html/wp-content/plugins/bvocal-gig-rsvp
       - ./plugins/bvocal-repertoire:/var/www/html/wp-content/plugins/bvocal-repertoire
+      - ./plugins/bvocal-volunteer-guide:/var/www/html/wp-content/plugins/bvocal-volunteer-guide
