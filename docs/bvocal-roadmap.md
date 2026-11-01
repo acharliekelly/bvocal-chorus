@@ -102,6 +102,8 @@ recreate the site from a local snapshot.
 
 - Inventory the active templates, reusable blocks, page patterns, menus, and
   third-party shortcodes used by live BVOCAL pages.
+- Maintain the [theme and content-dependency inventory](theme-inventory.md)
+  with representative live pages and their expected deployment lanes.
 - Identify theme changes that are code-only versus those requiring new live
   content or configuration.
 - Establish a short release checklist for theme changes: representative pages,
