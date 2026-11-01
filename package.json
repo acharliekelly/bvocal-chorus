@@ -1,0 +1,9 @@
+{
+  "name": "bvocal-wordpress",
+  "private": true,
+  "scripts": {
+    "test:staging": "bash tests/staging-package-test.sh",
+    "verify:staging": "bash scripts/verify-staging.sh",
+    "package:staging": "bash scripts/package-staging.sh"
+  }
+}
