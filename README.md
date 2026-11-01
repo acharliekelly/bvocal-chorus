@@ -51,6 +51,8 @@ site requires separate, explicit approval.
 ## Project notes
 
 - [Local development](docs/local-development.md) — setup and content rules.
+- [Technical roadmap](docs/bvocal-roadmap.md) — deployment lanes, theme
+  migration strategy, and development priorities.
 - [Site TODO](docs/bvocal-todo.md) — current follow-up work.
 - [Gig RSVP plugin](plugins/bvocal-gig-rsvp/README.md) — RSVP workflow and
   MailerLite behavior.
