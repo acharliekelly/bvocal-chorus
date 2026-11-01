@@ -1,0 +1,7 @@
+.bvocal-rsvp-legend { display: inline-block; margin-right: .5rem; padding: .25rem .6rem; border-radius: 3px; }
+.bvocal-rsvp-legend.cleanup, .bvocal-rsvp-cleanup td { background: #fff0f0 !important; }
+.bvocal-rsvp-legend.needed, .bvocal-rsvp-needed td { background: #fff8e5 !important; }
+.bvocal-rsvp-legend.ready, .bvocal-rsvp-ready td { background: #eff9f1 !important; }
+.bvocal-rsvp-cleanup td:first-child { border-left: 4px solid #b32d2e; }
+.bvocal-rsvp-needed td:first-child { border-left: 4px solid #b36b00; }
+.bvocal-rsvp-ready td:first-child { border-left: 4px solid #2d7a46; }
