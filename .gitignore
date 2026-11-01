@@ -12,6 +12,7 @@ docker/db-data/
 # optional: ignore vendor/node_modules if added later
 node_modules/
 vendor/
+build/
 .env
 .directory
 docker-compose.yml
