@@ -677,3 +677,9 @@ header.wp-block-template-part > .bvocal-header {
     margin-block-start: 0;
   }
 }
+/* Gig RSVP form. */
+.bvocal-gig-rsvp { max-width: 44rem; margin: 2rem 0; padding: 1.5rem; background: #f7f7f7; border-radius: 8px; }
+.bvocal-gig-rsvp input, .bvocal-gig-rsvp textarea { width: 100%; padding: .65rem; border: 1px solid #777; border-radius: 4px; }
+.bvocal-gig-rsvp fieldset { margin: 1rem 0; padding: 1rem; border: 1px solid #bbb; border-radius: 4px; }
+.bvocal-gig-rsvp fieldset input { width: auto; }
+.bvocal-gig-rsvp button { padding: .7rem 1.1rem; background: #1d5d5d; color: #fff; border: 0; border-radius: 4px; }
