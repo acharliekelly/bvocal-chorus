@@ -28,7 +28,7 @@ direct SQL as a deployment lane.
 
 | Archetype | Representative live URL | Template or current layout | Live-owned inputs and source | Plugin/integration dependencies | Smallest desired change | Deployment lane | Notes / verification status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Homepage | `/` | `front-page.html` | Page blocks, featured images, CTA destinations |  |  |  | Not started |
+| Homepage | `https://bvocalchorus.org/` | `front-page.html` | Front-page blocks, hero-media attachment, CTA destinations. Local (`http://localhost:8091/`) has the intended replacement content; live's older homepage content is being retired. |  | Restore the intended hero and use it with the new homepage treatment. | Feature-specific migration | Hero image is absent from staging's Media Library. Do not solve this by copying a database or uploads directory. Identify the local source file, upload it deliberately to staging, verify the relevant homepage block points to it, then create a separate approved live content-migration checklist. |
 | Standard page |  | `page.html` | Title, blocks, media |  |  |  | Not started |
 | Blog archive |  | `archive.html` | Posts, categories, featured images |  |  |  | Not started |
 | Single post |  | `single.html` | Post content, featured image, author/date metadata |  |  |  | Not started |
