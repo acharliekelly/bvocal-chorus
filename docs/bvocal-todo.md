@@ -1,12 +1,39 @@
 # BVOCAL Site TODO
 
-## CTA Destinations
+## BVOCAL Theme
 
-- Book Us: Add the temporary Google Forms URL or embed to `/booking-bvocal/`. Later, replace that temporary flow with the intended WPForms booking form when the broken form is fixed.
-- Support Us: Replace the `/support-us/` stub with the real support page and Stripe integration.
+- fix page patterns for softer, smoother look
 
-## Events and MailerLite
 
-- Add a “Sign Up to Show Up” action to each upcoming non-rehearsal Event from The Events Calendar.
-- Connect each event signup to a MailerLite group so respondents are subscribed to updates for that specific gig.
-- Define how rehearsals are distinguished from gigs before automating button placement.
+## BVOCAL PLugins
+
+### Volunteer Guide (KB-Sync)
+
+- Add Search bar
+
+
+### Gig RSVP
+
+- More Actions:
+  - Send Update (upcoming gig with ML group): send a short update message to ML Group, using a regular rich text editor; bypasses need to create a campaign in ML
+  - Make Past Event (past gig): create Past Event post, add media files
+
+
+### Repertoire
+
+- Create Repertoire index page
+- Create Songs -> Repertoire Items import tool
+
+
+### Past Events
+
+- Add Search bar: find past actions by date, venue
+- easy to link media, esp from YouTube, Facebook, Instagram
+
+
+## Documentation / Refactoring
+
+- add inline and PHPDoc comments
+- refactor code for maintainability by human or AI developers
+
+- add deployment scripts
