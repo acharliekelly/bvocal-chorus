@@ -9,5 +9,6 @@ while IFS= read -r -d '' php_file; do
 done < <(find "$repo_root/themes/bvocal" "$repo_root/plugins/bvocal-gig-rsvp" "$repo_root/plugins/bvocal-repertoire" "$repo_root/plugins/bvocal-volunteer-guide" -type f -name '*.php' -print0)
 
 bash "$repo_root/tests/staging-package-test.sh"
+bash "$repo_root/tests/homepage-hero-asset-test.sh"
 
 echo "PASS: custom BVOCAL code is ready to package for staging"
