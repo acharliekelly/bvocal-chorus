@@ -35,6 +35,7 @@ for component in bvocal-theme bvocal-gig-rsvp bvocal-repertoire bvocal-volunteer
 done
 
 assert_archive_contains "$output_dir/bvocal-theme.zip" "bvocal/style.css"
+assert_archive_contains "$output_dir/bvocal-theme.zip" "bvocal/assets/images/bvocal-logo.png"
 assert_archive_contains "$output_dir/bvocal-gig-rsvp.zip" "bvocal-gig-rsvp/bvocal-gig-rsvp.php"
 assert_archive_contains "$output_dir/bvocal-repertoire.zip" "bvocal-repertoire/bvocal-repertoire.php"
 assert_archive_contains "$output_dir/bvocal-volunteer-guide.zip" "bvocal-volunteer-guide/bvocal-volunteer-guide.php"

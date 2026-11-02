@@ -10,5 +10,6 @@ done < <(find "$repo_root/themes/bvocal" "$repo_root/plugins/bvocal-gig-rsvp" "$
 
 bash "$repo_root/tests/staging-package-test.sh"
 bash "$repo_root/tests/homepage-hero-asset-test.sh"
+bash "$repo_root/tests/theme-logo-asset-test.sh"
 
 echo "PASS: custom BVOCAL code is ready to package for staging"

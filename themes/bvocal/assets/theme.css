@@ -74,7 +74,7 @@ header.wp-block-template-part > .bvocal-header {
   align-items: center;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(220px, 360px) 1fr;
+  grid-template-columns: minmax(210px, 270px) 1fr;
   margin: 0 auto;
   max-width: 1180px;
   padding: 0.2rem 1rem;
@@ -83,8 +83,7 @@ header.wp-block-template-part > .bvocal-header {
 .bvocal-logo img {
   display: block;
   height: auto;
-  max-height: 92px;
-  max-width: 340px;
+  max-width: 260px;
   width: 100%;
 }
 
@@ -631,8 +630,7 @@ header.wp-block-template-part > .bvocal-header {
 
 @media (max-width: 480px) {
   .bvocal-logo img {
-    max-height: 82px;
-    max-width: 280px;
+    max-width: 200px;
   }
 
   .bvocal-hero h1 {

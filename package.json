@@ -2,7 +2,7 @@
   "name": "bvocal-wordpress",
   "private": true,
   "scripts": {
-    "test:staging": "bash tests/staging-package-test.sh && bash tests/homepage-hero-asset-test.sh",
+    "test:staging": "bash tests/staging-package-test.sh && bash tests/homepage-hero-asset-test.sh && bash tests/theme-logo-asset-test.sh",
     "verify:staging": "bash scripts/verify-staging.sh",
     "package:staging": "bash scripts/package-staging.sh"
   }
