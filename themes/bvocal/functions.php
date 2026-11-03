@@ -102,7 +102,7 @@ function bvocal_render_social_links() {
 }
 
 function bvocal_render_logo_block() {
-	$logo_url = get_theme_file_uri( 'assets/images/bvocal-logo.png' );
+	$logo_url = get_theme_file_uri( 'assets/images/bvocal-logo-stacked.png' );
 
 	return sprintf(
 		'<a class="bvocal-logo" href="%1$s" rel="home"><img src="%2$s" alt="%3$s"></a>',

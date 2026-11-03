@@ -74,7 +74,7 @@ header.wp-block-template-part > .bvocal-header {
   align-items: center;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(210px, 270px) 1fr;
+  grid-template-columns: 320px 1fr;
   margin: 0 auto;
   max-width: 1180px;
   padding: 0.2rem 1rem;
@@ -83,7 +83,7 @@ header.wp-block-template-part > .bvocal-header {
 .bvocal-logo img {
   display: block;
   height: auto;
-  max-width: 140px;
+  max-width: 320px;
   width: 100%;
 }
 
@@ -105,7 +105,7 @@ header.wp-block-template-part > .bvocal-header {
 .bvocal-menu__list a {
   color: var(--bvocal-black);
   display: block;
-  font-size: 0.86rem;
+  font-size: 1rem;
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1;
@@ -630,7 +630,7 @@ header.wp-block-template-part > .bvocal-header {
 
 @media (max-width: 480px) {
   .bvocal-logo img {
-    max-width: 160px;
+    max-width: 320px;
   }
 
   .bvocal-hero h1 {

@@ -5,8 +5,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 functions_file="$repo_root/themes/bvocal/functions.php"
 theme_css="$repo_root/themes/bvocal/assets/theme.css"
-logo_asset="$repo_root/themes/bvocal/assets/images/bvocal-logo.png"
-expected_url="assets/images/bvocal-logo.png"
+logo_asset="$repo_root/themes/bvocal/assets/images/bvocal-logo-stacked.png"
+expected_url="assets/images/bvocal-logo-stacked.png"
 
 if ! test -f "$logo_asset"; then
 	echo "Expected theme-owned logo asset: $logo_asset" >&2
@@ -28,13 +28,18 @@ if grep -Fq "'custom-logo'" "$functions_file"; then
 	exit 1
 fi
 
-if ! grep -Fq 'max-width: 140px;' "$theme_css"; then
-	echo "Expected the desktop logo to use a compact 140px visual width" >&2
+if ! grep -Fq 'grid-template-columns: 320px 1fr;' "$theme_css"; then
+	echo "Expected the desktop header to reserve 320px for the wide logo" >&2
 	exit 1
 fi
 
-if ! grep -Fq 'max-width: 160px;' "$theme_css"; then
-	echo "Expected the narrow-screen logo to use a compact 160px visual width" >&2
+if [[ "$(grep -Fc 'max-width: 320px;' "$theme_css")" -lt 2 ]]; then
+	echo "Expected the wide logo to use a readable 320px width on desktop and mobile" >&2
+	exit 1
+fi
+
+if ! grep -Fq 'font-size: 1rem;' "$theme_css"; then
+	echo "Expected the desktop header menu to use readable 1rem text" >&2
 	exit 1
 fi
 
