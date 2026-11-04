@@ -12,9 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class BVOCAL_Repertoire {
 	const POST_TYPE = 'repertoire_item';
 	const META_PREFIX = '_bvocal_repertoire_';
+	const DEFAULT_IMAGE_OPTION = 'bvocal_repertoire_default_image_id';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
+		add_action( 'admin_init', array( __CLASS__, 'register_default_image_settings' ) );
+		add_action( 'wp_after_insert_post', array( __CLASS__, 'apply_default_featured_image' ), 20, 2 );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( __CLASS__, 'add_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_meta_boxes' ) );
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'keep_incomplete_item_as_draft' ), 10, 2 );
@@ -47,13 +51,99 @@ class BVOCAL_Repertoire {
 			'has_archive' => true,
 			'rewrite'     => array( 'slug' => 'repertoire' ),
 			'menu_icon'   => 'dashicons-format-audio',
-			'supports'    => array( 'title' ),
+			'supports'    => array( 'title', 'thumbnail' ),
 		);
 	}
 
 	public static function register_post_type() {
 		$definition = self::post_type_definition();
 		register_post_type( $definition['post_type'], $definition );
+	}
+
+	/** Register one site-specific Media Library image as the default. */
+	public static function register_default_image_settings() {
+		register_setting( 'bvocal_repertoire_settings', self::DEFAULT_IMAGE_OPTION, array( 'type' => 'integer', 'default' => 0, 'sanitize_callback' => array( __CLASS__, 'sanitize_default_image' ) ) );
+		add_settings_section( 'bvocal_repertoire_images', 'Featured images', '__return_false', 'bvocal-repertoire-settings' );
+		add_settings_field( 'bvocal_repertoire_default_image', 'Default featured image', array( __CLASS__, 'render_default_image_field' ), 'bvocal-repertoire-settings', 'bvocal_repertoire_images' );
+	}
+
+	public static function add_settings_page() {
+		$hook = add_submenu_page( 'edit.php?post_type=' . self::POST_TYPE, 'Repertoire Settings', 'Settings', 'manage_options', 'bvocal-repertoire-settings', array( __CLASS__, 'render_settings_page' ) );
+		add_action( 'load-' . $hook, 'wp_enqueue_media' );
+	}
+
+	public static function sanitize_default_image( $value ) {
+		if ( '' === $value || 0 === $value || '0' === $value ) { return 0; }
+		$id = is_scalar( $value ) && ctype_digit( (string) $value ) ? (int) $value : 0;
+		if ( $id && wp_attachment_is_image( $id ) && 'trash' !== get_post_status( $id ) ) { return $id; }
+		if ( function_exists( 'add_settings_error' ) ) {
+			add_settings_error( self::DEFAULT_IMAGE_OPTION, 'invalid_image', 'Choose an image from the Media Library. The previous default was kept.' );
+		}
+		return (int) get_option( self::DEFAULT_IMAGE_OPTION, 0 );
+	}
+
+	public static function default_image_id() {
+		$id = (int) get_option( self::DEFAULT_IMAGE_OPTION, 0 );
+		return $id && wp_attachment_is_image( $id ) && 'trash' !== get_post_status( $id ) ? $id : 0;
+	}
+
+	/** wp_after_insert_post runs after explicit thumbnail edits, including REST saves. */
+	public static function apply_default_featured_image( $post_id, $post = null ) {
+		$post = $post ? $post : get_post( $post_id );
+		if ( ! $post || self::POST_TYPE !== $post->post_type || in_array( $post->post_status, array( 'auto-draft', 'trash' ), true ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || get_post_thumbnail_id( $post_id ) ) {
+			return false;
+		}
+		$default = self::default_image_id();
+		return $default ? (bool) set_post_thumbnail( $post_id, $default ) : false;
+	}
+
+	public static function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) { return; }
+		?>
+		<div class="wrap">
+			<h1>Repertoire Settings</h1>
+			<?php settings_errors(); ?>
+			<form action="options.php" method="post">
+				<?php settings_fields( 'bvocal_repertoire_settings' ); do_settings_sections( 'bvocal-repertoire-settings' ); submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+	public static function render_default_image_field() {
+		$id = self::default_image_id();
+		printf( '<input type="hidden" id="bvocal-default-image-id" name="%1$s" value="%2$d">', esc_attr( self::DEFAULT_IMAGE_OPTION ), $id );
+		echo '<div id="bvocal-default-image-preview">' . ( $id ? wp_get_attachment_image( $id, 'thumbnail' ) : '' ) . '</div>';
+		echo '<p><button type="button" class="button" id="bvocal-choose-default-image">Choose default image</button> <button type="button" class="button" id="bvocal-clear-default-image">Clear default</button></p>';
+		echo '<p class="description">Used when a Repertoire item is saved without a featured image. Existing images are kept. Removing an item’s image restores the default when you save. Clear this setting to disable automatic assignment.</p>';
+		?>
+		<script>
+		(function () {
+			var input = document.getElementById('bvocal-default-image-id');
+			var preview = document.getElementById('bvocal-default-image-preview');
+			document.getElementById('bvocal-choose-default-image').addEventListener('click', function () {
+				var frame = wp.media({title: 'Choose default featured image', button: {text: 'Use this image'}, multiple: false, library: {type: 'image'}});
+				frame.on('select', function () {
+					var attachment = frame.state().get('selection').first().toJSON();
+					input.value = attachment.id;
+					preview.textContent = '';
+					var image = document.createElement('img');
+					image.src = attachment.sizes && attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url;
+					image.alt = attachment.alt || '';
+					image.width = 150;
+					image.style.maxWidth = '100%';
+					image.style.height = 'auto';
+					preview.appendChild(image);
+				});
+				frame.open();
+			});
+			document.getElementById('bvocal-clear-default-image').addEventListener('click', function () {
+				input.value = 0;
+				preview.textContent = '';
+			});
+		}());
+		</script>
+		<?php
 	}
 
 	public static function add_meta_boxes() {

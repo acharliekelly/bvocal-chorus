@@ -57,7 +57,8 @@ No featured images are assigned by the preview.
 Run the same command against staging's own content after deploying this plugin,
 and eventually live's own content after approval. Do not import this report as
 staging content into live. Use the separate draft-creation command below only
-when ready. Featured-image support, publication and redirects remain separate work.
+when ready. Configure the default featured image as described below before
+creating drafts. Publication and redirects remain separate work.
 
 ## Verify preview changes
 
@@ -163,3 +164,51 @@ slug rather than destination numeric IDs. Matching title/slug or shared media
 still blocks conversion; unrelated identical lyrics still require review.
 Hostile Government retains its own title, credits, and recording and is created
 as a draft for review, without modifying First Amendment or either original Song.
+
+# Default featured image
+
+Version 0.1.6 enables the standard Featured Image panel for Repertoire.
+Administrators can open **Repertoire → Settings**, choose an image from that
+site's Media Library, and Save Changes. The approved BVOCAL default is the
+musical-score illustration (`bvocal-musical-score.png`).
+
+When an item is saved without a featured image, the plugin assigns the selected
+default. This also applies to newly converted drafts. An explicitly chosen image
+always takes precedence. Auto-drafts, Trash, revisions/autosaves, and other post
+types are unaffected. Removing an item's featured image restores the default
+when saved. Clear the setting to disable future assignment; images already
+assigned remain in place. Changing the default does not replace existing images.
+A deleted or trashed default image is not assigned to new items.
+
+## Repeat on staging/live
+
+1. Deploy the approved plugin ZIP.
+2. Upload the approved musical-score asset if it is not already in that site's
+   Media Library. This is one selected asset, not an uploads-directory import.
+3. Open Repertoire → Settings, choose that site's copy, and Save Changes.
+   Attachment IDs differ between sites; do not copy the local numeric ID.
+4. Prefer doing this before conversion so new drafts receive their images.
+5. For existing items, saving each item fills a missing image. A maintainer can
+   instead perform a targeted backfill with the following WP-CLI command after
+   previewing which existing items lack images and confirming the default:
+
+```sh
+wp eval '$ids = get_posts(["post_type"=>"repertoire_item", "post_status"=>["publish","draft","pending","private","future"], "posts_per_page"=>-1, "fields"=>"ids"]); foreach ($ids as $id) { if (!get_post_thumbnail_id($id)) { BVOCAL_Repertoire::apply_default_featured_image($id); } }'
+```
+
+The backfill touches only missing thumbnail metadata; it does not edit the item
+content or replace custom images. Keep a record of changed item IDs and previous
+thumbnail values for rollback. Do not remove images subsequently chosen by an
+editor. This setting does not add images to archive/single templates; their
+placement is a separate theme change.
+
+## Verify default images
+
+```sh
+wp eval-file wp-content/plugins/bvocal-repertoire/tests/default-image-test.php
+```
+
+The test restores the previous setting and removes its temporary posts. In the
+editor, save a new draft without selecting an image and confirm that the default
+appears. Choose a different image and save again; that choice must remain. Open
+an existing item to confirm that its Featured Image panel is available.
