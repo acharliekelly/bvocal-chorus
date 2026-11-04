@@ -212,3 +212,75 @@ The test restores the previous setting and removes its temporary posts. In the
 editor, save a new draft without selecting an image and confirm that the default
 appears. Choose a different image and save again; that choice must remain. Open
 an existing item to confirm that its Featured Image panel is available.
+
+# Replay reviewed editorial corrections
+
+Version 0.1.7 adds a bounded correction command. The converter still extracts
+that site's own Songs; this follow-up applies only the audited field differences
+to paired drafts. It does not create items, publish, redirect, import a database,
+or replace original Songs. The separate `final-corrections.json` audit manifest
+is release input, not content bundled into the plugin repository.
+
+```sh
+wp bvocal repertoire replay-corrections /private/final-corrections.json --format=table
+wp bvocal repertoire replay-corrections /private/final-corrections.json --song=hold-on
+wp bvocal repertoire replay-corrections /private/final-corrections.json --apply --user=<administrator> --backup=/private/new-replay-rollback.json
+```
+
+Use actual readable manifest and writable backup paths on the destination server.
+For Docker, mount the manifest read-only and a private backup directory separately;
+paths inside the container differ from host paths. A local root-run container owns
+its private backup, so read/copy it through that same container account. Do not
+loosen backup permissions merely to inspect it.
+
+## Preflight and matching
+
+- Preview is the default and writes no WordPress records or backup file.
+- Match the source by its Song slug and the target by conversion provenance.
+- Compare the current source extraction with the audit baseline. Hold unexpected
+  source changes or unmapped components for review.
+- Each current target field must equal either its baseline or reviewed value.
+  Unexpected manual edits, extra body/excerpt content, protection, ambiguous
+  targets, invalid media, or occupied URL slugs are held for review.
+- Equivalent Drive view/share URLs, site-relative uploaded media, line endings,
+  trailing spaces, and the approved Gallitan → Gallatin spelling rule are handled
+  deliberately. Numeric attachment IDs and localhost URLs are not replayed.
+- Already-correct entries, including published entries, are reported without
+  edits. The two explicitly identified local manual entries may be recognized
+  only if their complete fields already match; they are never edited or adopted.
+- Only draft targets can be changed. Corrections never publish or unpublish.
+- One blocked entry prevents the entire selected apply run from starting.
+  Use `--song=<source-slug>` only after separately reviewing a narrower selection.
+
+## Apply and recovery
+
+Apply requires administrator context and a new absolute backup path outside the
+WordPress root. A shared conversion/replay lock prevents overlapping CLI writes.
+The rollback JSON is exclusively created with private permissions **before** any
+correction. It records site, manifest checksum, destination IDs, original field
+values and metadata presence, and planned changes. Existing files are never
+overwritten. A no-change run creates no backup file.
+
+Each target and source is checked again immediately before writing. Entries that
+already match are skipped, making replay safe to repeat. An error stops further
+edits and releases the lock; a runtime failure after writes begin may leave a
+partial run. Inspect the JSON report and rollback file before retrying. A killed
+process can leave a lock; confirm no run is active before removing it.
+
+There is no automatic rollback command. To recover, use the backup from the same
+site and restore only the affected fields, checking for subsequent editor changes
+first. Restore a formerly absent metadata field by removing it, rather than
+inventing an empty value. Do not restore original Songs or unrelated fields.
+Keep the backup private and retain it through staging/live verification.
+
+## Verification
+
+```sh
+wp eval-file wp-content/plugins/bvocal-repertoire/tests/correction-replay-test.php
+```
+
+The test creates and removes temporary local records. It exercises draft updates,
+source/target drift, reruns, title/slug changes, structured recording labels,
+media validation, schema restrictions and permission/publication guards. Before
+live approval, rehearse the same manifest and command against staging's own
+converted drafts and verify its report, credits, lyrics and media manually.
