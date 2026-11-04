@@ -218,7 +218,6 @@ function bvocal_is_member_context() {
 		'gigs',
 		'practice-materials',
 		'teams',
-		'songs',
 		'songs-with-musical-scores',
 		'song-sheets-by-topic',
 		'tips-on-reading-musical-scores',
