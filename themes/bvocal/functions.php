@@ -28,6 +28,16 @@ function bvocal_setup() {
 }
 add_action( 'after_setup_theme', 'bvocal_setup' );
 
+/** Keep the public Repertoire archive alphabetical across inherited query pages. */
+function bvocal_order_repertoire_archive( $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_post_type_archive( 'repertoire_item' ) ) {
+		return;
+	}
+	$query->set( 'orderby', array( 'title' => 'ASC', 'ID' => 'ASC' ) );
+	$query->set( 'order', 'ASC' );
+}
+add_action( 'pre_get_posts', 'bvocal_order_repertoire_archive' );
+
 function bvocal_enqueue_assets() {
 	wp_enqueue_style(
 		'bvocal-theme',

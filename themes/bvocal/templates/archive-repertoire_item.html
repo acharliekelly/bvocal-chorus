@@ -7,11 +7,16 @@
 	<!-- wp:heading {"level":1,"className":"bvocal-page-title"} -->
 	<h1 class="wp-block-heading bvocal-page-title">Repertoire</h1>
 	<!-- /wp:heading -->
-	<!-- wp:query {"queryId":3,"query":{"perPage":100,"pages":0,"offset":0,"postType":"repertoire_item","order":"asc","orderBy":"title","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"bvocal-loop-query"} -->
+	<!-- wp:query {"queryId":3,"query":{"inherit":true},"className":"bvocal-loop-query"} -->
 	<div class="wp-block-query bvocal-loop-query">
 		<!-- wp:post-template {"className":"bvocal-repertoire-index"} -->
 			<!-- wp:post-title {"isLink":true,"level":2} /-->
 		<!-- /wp:post-template -->
+		<!-- wp:query-pagination {"paginationArrow":"arrow","layout":{"type":"flex","justifyContent":"space-between"}} -->
+			<!-- wp:query-pagination-previous /-->
+			<!-- wp:query-pagination-numbers /-->
+			<!-- wp:query-pagination-next /-->
+		<!-- /wp:query-pagination -->
 	</div>
 	<!-- /wp:query -->
 </main>
