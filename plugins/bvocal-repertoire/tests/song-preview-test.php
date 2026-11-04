@@ -9,16 +9,16 @@ $r = BVOCAL_Song_Preview::preview( preview_fixture( $body ) );
 preview_expect( 'Heidi Wilson' === $r['proposed']['author'], 'Split explicit author from arranger.' );
 preview_expect( 'L. Gallatin' === $r['proposed']['arranger'], 'Preserve arranger spelling.' );
 preview_expect( "Hold on\nmy dear ones" === $r['proposed']['lyrics'], 'Preserve lyric line breaks through nested groups.' );
-preview_expect( 1 === count($r['unmapped']) && 'link' === $r['unmapped'][0]['type'], 'YouTube remains a reported unmapped component.' );
-preview_expect( false !== strpos($r['unmapped'][0]['text'], 'Watch the performance'), 'Preserve link context, not just here.' );
+preview_expect( 1 === count($r['proposed']['links']) && !$r['unmapped'], 'YouTube maps into Links.' );
+preview_expect( false !== strpos($r['proposed']['links'][0]['label'], 'Watch the performance'), 'Preserve link context, not just here.' );
 $r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:paragraph --><p>Arrangement by Lisa Gallatin</p><!-- /wp:paragraph --><!-- wp:heading --><h2>Practice Recordings</h2><!-- /wp:heading --><!-- wp:audio --><figure class="wp-block-audio"><audio src="https://example.org/missing.mp3"></audio></figure><!-- /wp:audio -->') );
 preview_expect( '' === $r['proposed']['author'] && 'Lisa Gallatin' === $r['proposed']['arranger'], 'Do not invent author from arrangement credit.' );
 preview_expect( in_array('Author needs review.', $r['warnings'], true), 'Missing author is explicit.' );
 preview_expect( count($r['unmapped']) === 1, 'Uncatalogued audio cannot silently disappear.' );
 $r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:heading --><h2>Lyrics</h2><!-- /wp:heading --><!-- wp:html --><div>Unusual custom content</div><!-- /wp:html --><!-- wp:video --><figure class="wp-block-video"><video src="https://example.org/performance.mp4"></video><figcaption>Performance caption</figcaption></figure><!-- /wp:video -->') );
-preview_expect( count($r['unmapped']) === 2, 'Custom HTML and uploaded video are preserved as exceptions.' );
-preview_expect( 'Performance caption' === $r['unmapped'][1]['text'], 'Keep video caption.' );
-preview_expect( 'https://example.org/performance.mp4' === $r['unmapped'][1]['url'], 'Keep video URL.' );
+preview_expect( count($r['unmapped']) === 1 && count($r['proposed']['links']) === 1, 'Custom HTML stays unmapped while video maps to Links.' );
+preview_expect( 'Performance caption' === $r['proposed']['links'][0]['label'], 'Keep video caption.' );
+preview_expect( 'https://example.org/performance.mp4' === $r['proposed']['links'][0]['url'], 'Keep video URL.' );
 $r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:paragraph --><p>Based on &quot;Example&quot; by Someone.</p><!-- /wp:paragraph -->') );
 preview_expect( '' === $r['proposed']['author'] && false !== strpos($r['proposed']['notes'], 'Based on'), 'Based-on attribution is notes, not guessed authorship.' );
 // Standard list blocks contain nested list-item blocks in current WordPress.
@@ -34,7 +34,7 @@ if ($hold) {
  $r = BVOCAL_Song_Preview::preview($hold);
  preview_expect( 1 === count($r['proposed']['recordings']), 'Resolve Hold On audio without a block attachment ID.' );
  preview_expect( 0 === strpos($r['proposed']['recordings'][0]['url'], 'https://drive.google.com/file/d/'), 'Use portable Drive link.' );
- preview_expect( count($r['unmapped']) === 1 && $r['unmapped'][0]['type'] === 'link', 'Hold On only leaves its performance link unmapped.' );
+ preview_expect( !$r['unmapped'] && count($r['proposed']['links']) === 1, 'Hold On performance link is fully mapped.' );
 }
 $after = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts}") . ':' . $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta}");
 preview_expect( $before === $after, 'Preview does not insert posts or metadata.' );

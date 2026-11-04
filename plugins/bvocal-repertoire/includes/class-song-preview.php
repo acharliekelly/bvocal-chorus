@@ -58,6 +58,17 @@ class BVOCAL_Song_Preview {
 		return array( 'attachment_id' => $id, 'url' => $resolved );
 	}
 
+	private static function add_link( &$report, $block, $label, $url ) {
+		$link = BVOCAL_Repertoire::normalize_link( array( 'label' => $label, 'url' => $url ) );
+		if ( is_wp_error( $link ) ) {
+			self::unmapped( $report, $block, 'invalid_link', $label, $url );
+			$report['warnings'][] = 'Link URL needs review.';
+		} else {
+			$report['proposed']['links'][] = $link;
+			if ( '' === $label ) { $report['warnings'][] = 'Link label needs review.'; }
+		}
+	}
+
 	private static function unmapped( &$report, $block, $type, $text = '', $url = '' ) {
 		$report['unmapped'][] = array( 'type' => $type, 'text' => $text, 'url' => $url, 'source_block' => serialize_block( $block ) );
 	}
@@ -77,7 +88,7 @@ class BVOCAL_Song_Preview {
 	public static function preview( $song ) {
 		$report = array(
 			'source' => array( 'id' => (int) $song->ID, 'slug' => $song->post_name, 'title' => $song->post_title, 'status' => $song->post_status, 'content_sha256' => hash( 'sha256', $song->post_content ) ),
-			'proposed' => array( 'title' => $song->post_title, 'status' => 'draft', 'author' => '', 'arranger' => '', 'lyricist' => '', 'language' => '', 'notes' => '', 'lyrics' => '', 'score_url' => '', 'recordings' => array() ),
+			'proposed' => array( 'title' => $song->post_title, 'status' => 'draft', 'author' => '', 'arranger' => '', 'lyricist' => '', 'language' => '', 'notes' => '', 'lyrics' => '', 'score_url' => '', 'recordings' => array(), 'links' => array() ),
 			'media' => array(), 'warnings' => array(), 'unmapped' => array(),
 		);
 		$section = 'intro';
@@ -122,11 +133,19 @@ class BVOCAL_Song_Preview {
 			if ( 'core/video' === $type || 'core/embed' === $type ) {
 				$caption = preg_match( '#<figcaption[^>]*>(.*?)</figcaption>#s', $html, $m ) ? self::text( $m[1] ) : $text;
 				$url = ! empty( $block['attrs']['url'] ) ? $block['attrs']['url'] : self::url( $block );
-				self::unmapped( $report, $block, 'performance_media', $caption, $url );
+				self::add_link( $report, $block, $caption, $url );
 				continue;
 			}
 			if ( preg_match_all( '#<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', $html, $links, PREG_SET_ORDER ) ) {
-				foreach ( $links as $link ) { self::unmapped( $report, $block, 'link', $text, html_entity_decode( $link[1], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ); }
+				if ( ! in_array( $type, array( 'core/paragraph', 'core/list' ), true ) ) {
+					self::unmapped( $report, $block, 'unsupported_block', $text ); continue;
+				}
+				foreach ( $links as $link ) {
+					$link_label = 1 === count( $links ) ? $text : self::text( $link[2] );
+					self::add_link( $report, $block, $link_label, html_entity_decode( $link[1], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+				}
+				if ( 'lyrics' === $section ) { $lyrics[] = $text; }
+				elseif ( count( $links ) > 1 ) { $notes[] = $text; }
 				continue;
 			}
 			if ( ! in_array( $type, array( 'core/paragraph', 'core/list', 'core/verse', 'core/preformatted' ), true ) ) {
@@ -166,7 +185,7 @@ class BVOCAL_Song_Preview {
 			}
 			if ( $legacy ) { $report['legacy_fields_for_review'] = $legacy; $report['warnings'][] = 'Legacy media fields exist; compare with current blocks before conversion.'; }
 		}
-		if ( $report['unmapped'] ) { $report['warnings'][] = 'Unmapped components remain; Links is not implemented in this preview.'; }
+		if ( $report['unmapped'] ) { $report['warnings'][] = 'Unmapped components remain; review before conversion.'; }
 		$report['warnings'] = array_values( array_unique( $report['warnings'] ) );
 		return $report;
 	}
@@ -203,8 +222,8 @@ class BVOCAL_Song_Preview {
 			WP_CLI::line( wp_json_encode( array( 'mode' => 'preview-only', 'site' => home_url(), 'count' => count( $reports ), 'songs' => $reports ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
 		} else {
 			$rows = array();
-			foreach ( $reports as $r ) { $rows[] = array( 'ID' => $r['source']['id'], 'Title' => $r['source']['title'], 'Author' => $r['proposed']['author'], 'Score' => $r['proposed']['score_url'] ? 'yes' : 'no', 'Audio' => count( $r['proposed']['recordings'] ), 'Unmapped' => count( $r['unmapped'] ), 'Warnings' => count( $r['warnings'] ) ); }
-			\WP_CLI\Utils\format_items( 'table', $rows, array( 'ID', 'Title', 'Author', 'Score', 'Audio', 'Unmapped', 'Warnings' ) );
+			foreach ( $reports as $r ) { $rows[] = array( 'ID' => $r['source']['id'], 'Title' => $r['source']['title'], 'Author' => $r['proposed']['author'], 'Score' => $r['proposed']['score_url'] ? 'yes' : 'no', 'Audio' => count( $r['proposed']['recordings'] ), 'Links' => count( $r['proposed']['links'] ), 'Unmapped' => count( $r['unmapped'] ), 'Warnings' => count( $r['warnings'] ) ); }
+			\WP_CLI\Utils\format_items( 'table', $rows, array( 'ID', 'Title', 'Author', 'Score', 'Audio', 'Links', 'Unmapped', 'Warnings' ) );
 		}
 	}
 }

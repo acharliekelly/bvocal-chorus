@@ -20,6 +20,7 @@ class BVOCAL_Repertoire {
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'keep_incomplete_item_as_draft' ), 10, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'render_author_required_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_media_validation_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_links_validation_notice' ) );
 		add_filter( 'the_content', array( __CLASS__, 'append_public_details' ) );
 		add_action( 'admin_footer-post.php', array( __CLASS__, 'render_recording_repeater_script' ) );
 		add_action( 'admin_footer-post-new.php', array( __CLASS__, 'render_recording_repeater_script' ) );
@@ -58,7 +59,7 @@ class BVOCAL_Repertoire {
 	public static function add_meta_boxes() {
 		add_meta_box( 'bvocal-repertoire-info', 'Repertoire information', array( __CLASS__, 'render_information_box' ), self::POST_TYPE, 'normal', 'high' );
 		add_meta_box( 'bvocal-repertoire-lyrics', 'Lyrics', array( __CLASS__, 'render_lyrics_box' ), self::POST_TYPE, 'normal', 'default' );
-		add_meta_box( 'bvocal-repertoire-materials', 'Score and recordings', array( __CLASS__, 'render_materials_box' ), self::POST_TYPE, 'normal', 'default' );
+		add_meta_box( 'bvocal-repertoire-materials', 'Score, recordings and links', array( __CLASS__, 'render_materials_box' ), self::POST_TYPE, 'normal', 'default' );
 	}
 
 	private static function value( $post_id, $key ) {
@@ -164,6 +165,56 @@ class BVOCAL_Repertoire {
 		echo '<template id="bvocal-recording-template">';
 		self::render_recording_row( array() );
 		echo '</template>';
+		$links = self::value( $post->ID, 'links' );
+		echo '<p><strong>Links</strong></p><p>Optional performances or other resources. Each link opens in a new tab; no player is embedded. Use complete http:// or https:// URLs.</p><div id="bvocal-repertoire-links">';
+		foreach ( is_array( $links ) ? $links : array() as $link ) {
+			self::render_link_row( $link );
+		}
+		echo '</div><p><button type="button" class="button" id="bvocal-add-link">Add link</button></p><template id="bvocal-link-template">';
+		self::render_link_row( array() );
+		echo '</template>';
+	}
+
+	/** Links accept web URLs, including locally hosted performance files. */
+	public static function normalize_link( $link ) {
+		if ( ! is_array( $link ) || ! isset( $link['url'] ) || ! is_string( $link['url'] ) ) {
+			return new WP_Error( 'invalid_link', 'Use a complete http:// or https:// URL.' );
+		}
+		$url = esc_url_raw( trim( $link['url'] ), array( 'http', 'https' ) );
+		$scheme = wp_parse_url( trim( $link['url'] ), PHP_URL_SCHEME );
+		if ( ! in_array( strtolower( (string) $scheme ), array( 'http', 'https' ), true ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error( 'invalid_link', 'Use a complete http:// or https:// URL.' );
+		}
+		$label = isset( $link['label'] ) && is_string( $link['label'] ) ? sanitize_text_field( $link['label'] ) : '';
+		return array( 'label' => $label, 'url' => $url );
+	}
+
+	/** Render optional links without video or audio embeds. */
+	public static function links_markup( $links ) {
+		$items = '';
+		foreach ( is_array( $links ) ? $links : array() as $link ) {
+			$link = self::normalize_link( $link );
+			if ( is_wp_error( $link ) ) { continue; }
+			$label = '' !== $link['label'] ? $link['label'] : $link['url'];
+			$items .= '<li><a href="' . esc_url( $link['url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a></li>';
+		}
+		return $items ? '<section><h2>Links</h2><ul class="bvocal-repertoire__links">' . $items . '</ul></section>' : '';
+	}
+
+	private static function render_link_row( $link ) {
+		$label = isset( $link['label'] ) ? $link['label'] : '';
+		$url = isset( $link['url'] ) ? $link['url'] : '';
+		printf( '<p class="bvocal-link-row"><label>Label <input type="text" name="bvocal_repertoire[link_label][]" value="%1$s" placeholder="e.g. Community performance"></label> <label>URL <input class="regular-text" type="url" name="bvocal_repertoire[link_url][]" value="%2$s" placeholder="https://..."></label> <button type="button" class="button-link-delete bvocal-remove-link">Remove</button></p>', esc_attr( $label ), esc_attr( $url ) );
+	}
+
+	public static function add_links_validation_notice( $location ) {
+		return add_query_arg( 'bvocal_repertoire_links_error', 'invalid_link', $location );
+	}
+
+	public static function render_links_validation_notice() {
+		if ( isset( $_GET['bvocal_repertoire_links_error'] ) && 'invalid_link' === $_GET['bvocal_repertoire_links_error'] ) {
+			echo '<div class="notice notice-error"><p>Links were not saved; the previous list was kept. Use complete http:// or https:// URLs.</p></div>';
+		}
 	}
 
 	private static function render_recording_row( $recording ) {
@@ -254,6 +305,21 @@ class BVOCAL_Repertoire {
 			}
 		}
 		update_post_meta( $post_id, self::META_PREFIX . 'recordings', $recordings );
+		$links = array();
+		$labels = isset( $submitted['link_label'] ) && is_array( $submitted['link_label'] ) ? $submitted['link_label'] : array();
+		$urls = isset( $submitted['link_url'] ) && is_array( $submitted['link_url'] ) ? $submitted['link_url'] : array();
+		foreach ( array_unique( array_merge( array_keys( $labels ), array_keys( $urls ) ) ) as $index ) {
+			$label = isset( $labels[$index] ) ? $labels[$index] : '';
+			$url = isset( $urls[$index] ) ? $urls[$index] : '';
+			if ( is_string( $label ) && is_string( $url ) && '' === trim( $label ) && '' === trim( $url ) ) { continue; }
+			$link = self::normalize_link( array( 'label' => $label, 'url' => $url ) );
+			if ( is_wp_error( $link ) ) {
+				add_filter( 'redirect_post_location', array( __CLASS__, 'add_links_validation_notice' ) );
+				return;
+			}
+			$links[] = $link;
+		}
+		update_post_meta( $post_id, self::META_PREFIX . 'links', $links );
 	}
 
 	public static function append_public_details( $content ) {
@@ -299,6 +365,7 @@ class BVOCAL_Repertoire {
 			}
 			$output .= '</ul></section>';
 		}
+		$output .= self::links_markup( self::value( $post_id, 'links' ) );
 		return $content . $output . '</div>';
 	}
 
@@ -315,6 +382,12 @@ class BVOCAL_Repertoire {
 				}
 				if (event.target.classList.contains('bvocal-remove-recording')) {
 					event.target.closest('.bvocal-recording-row').remove();
+				}
+				if (event.target.id === 'bvocal-add-link') {
+					document.querySelector('#bvocal-repertoire-links').insertAdjacentHTML('beforeend', document.querySelector('#bvocal-link-template').innerHTML);
+				}
+				if (event.target.classList.contains('bvocal-remove-link')) {
+					event.target.closest('.bvocal-link-row').remove();
 				}
 				if (event.target.classList.contains('bvocal-media-picker')) {
 					var button = event.target;
