@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BVOCAL Repertoire
  * Description: A clean repertoire-item content model for BVOCAL performance materials.
- * Version: 0.1.2
+ * Version: 0.1.3
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: bvocal-repertoire
@@ -27,8 +27,10 @@ register_activation_hook(
 register_deactivation_hook(
 	__FILE__, 'flush_rewrite_rules' );
 
-// Conversion preview is available only through WP-CLI; it never writes records.
+// Conversion tools are available only through WP-CLI; creation requires --apply.
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once __DIR__ . '/includes/class-song-preview.php';
 	WP_CLI::add_command( 'bvocal repertoire preview-songs', array( 'BVOCAL_Song_Preview', 'command' ) );
+	require_once __DIR__ . '/includes/class-song-conversion.php';
+	WP_CLI::add_command( 'bvocal repertoire convert-songs', array( 'BVOCAL_Song_Conversion', 'command' ) );
 }

@@ -56,8 +56,8 @@ No featured images are assigned by the preview.
 
 Run the same command against staging's own content after deploying this plugin,
 and eventually live's own content after approval. Do not import this report as
-staging content into live. Draft creation, rerun/provenance handling,
-featured-image support, publication and redirects remain separate work.
+staging content into live. Use the separate draft-creation command below only
+when ready. Featured-image support, publication and redirects remain separate work.
 
 ## Verify preview changes
 
@@ -78,3 +78,68 @@ the item and confirm that both are ordinary new-tab links with no embedded
 player. Remove the temporary draft when finished. Deploy this plugin ZIP to
 staging for rehearsal; live code deployment still requires separate approval.
 Existing items need no migration to support an empty Links section.
+
+# Create Repertoire drafts from Songs
+
+Version 0.1.3 adds a separate conversion command. It defaults to a read-only
+plan; **--apply** is required to create drafts. The original preview command
+remains read-only and still rejects --apply.
+
+```sh
+wp bvocal repertoire convert-songs --format=table
+wp bvocal repertoire convert-songs --song=1789
+wp bvocal repertoire convert-songs --apply --user=<administrator> > conversion-run.json
+```
+
+Replace `<administrator>` with an actual administrator login or ID. For local
+Docker, use the prefix shown above. IDs and administrator accounts belong to
+the destination site; never assume staging IDs match live.
+
+The plan reports would_create, blocked_conflict, blocked_unmapped, or blocked
+source/visibility decisions. Apply checks again after each new draft: overlapping
+material between source Songs can therefore cause additional items to be held
+back as the run proceeds. Creation follows these rules:
+
+- Create only new drafts from published, unprotected Songs. Private/test items
+  and password-protected content are excluded.
+- Keep original Songs, URLs, uploads, and existing Repertoire items unchanged.
+- Hold back sources containing unmapped components rather than losing them.
+- Flag existing items with matching title/slug, identical lyrics, or shared
+  score/recording identities for manual review. A possible match is not a merge.
+- Store mapped fields, Links, review warnings, source Song ID, source fingerprint,
+  and conversion run ID on each new draft.
+- Permit incomplete credits and labels only as drafts requiring human review.
+  This does not establish that any draft is publication-ready.
+- On rerun, skip existing conversions even if someone has edited them. Report
+  changed source data without overwriting the draft. A conversion in Trash is
+  also skipped; restore/review it instead of creating a duplicate.
+
+The fingerprint covers source content/title, mapped fields, media identities,
+and relevant legacy fields. Mapping-code changes may also cause a conservative
+source-changed report. No refresh/overwrite operation is provided.
+
+Only one apply command can run at a time. A normal exit releases its lock. If a
+process is killed, inspect `wp option get bvocal_repertoire_conversion_lock`
+and verify no conversion is running before manually removing that stale lock.
+
+Keep the JSON run report: it records created IDs and decisions. To roll back,
+review the IDs with status `created` and move only those drafts to Trash using
+WordPress admin. Do not delete original Songs or pre-existing Repertoire items.
+Once drafts have been edited/published, review them individually before rollback.
+
+Rehearse locally and then independently on staging's own content. Run the same
+code against live's own Songs only after approval. Do not import converted
+staging records into live. Publishing, index-link cutover, and redirects remain
+separate approved steps.
+
+## Verify draft conversion
+
+```sh
+wp eval-file wp-content/plugins/bvocal-repertoire/tests/song-conversion-test.php
+```
+
+The test creates and cleans up temporary local fixtures. It checks draft status,
+source preservation, structured fields, reruns, manual edits, source changes,
+Trash, manual duplicates, permissions, and visibility. Review actual converted
+drafts in WordPress and compare their lyrics, score/audio links, captions, and
+credits against the original Songs before publishing anything.
