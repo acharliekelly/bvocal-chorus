@@ -1,6 +1,10 @@
 <?php
 /** Run with wp eval-file; all temporary source and target records are removed. */
 function conversion_expect( $ok, $message ) { if ( ! $ok ) { throw new RuntimeException($message); } }
+conversion_expect( BVOCAL_Song_Conversion::shared_lyrics_allowed('hostile-government-take-over','first-amendment-2'), 'Approved pair may share lyrics.' );
+conversion_expect( BVOCAL_Song_Conversion::shared_lyrics_allowed('first-amendment-2','hostile-government-take-over'), 'Exception works in either conversion order.' );
+conversion_expect( !BVOCAL_Song_Conversion::shared_lyrics_allowed('another-song','first-amendment-2'), 'Other pairs still require review.' );
+conversion_expect( !BVOCAL_Song_Conversion::shared_lyrics_allowed('hostile-government-take-over',''), 'Missing source identity is not exempt.' );
 $original_user = get_current_user_id();
 $ids = array();
 try {

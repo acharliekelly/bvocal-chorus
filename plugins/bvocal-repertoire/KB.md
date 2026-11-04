@@ -152,3 +152,14 @@ the text alongside existing notes. This is an explicitly approved exception;
 other placeholder text and unsupported content remain unmapped. Run the same
 preview/conversion commands against each site's own Song. Existing converted
 items are still never overwritten by a rerun.
+
+## Approved shared lyrics: Hostile Government and First Amendment
+
+Version 0.1.5 treats source Songs `hostile-government-take-over` and
+`first-amendment-2` as distinct even when their lyrics match. This is a
+user-confirmed exception. It applies only to the lyrics conflict reason and
+works in either conversion order, using the existing item's tracked source Song
+slug rather than destination numeric IDs. Matching title/slug or shared media
+still blocks conversion; unrelated identical lyrics still require review.
+Hostile Government retains its own title, credits, and recording and is created
+as a draft for review, without modifying First Amendment or either original Song.

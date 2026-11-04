@@ -21,6 +21,13 @@ class BVOCAL_Song_Conversion {
 		return array_keys( get_post_stati() );
 	}
 
+	/** User-confirmed distinct Songs with intentionally identical lyrics. */
+	public static function shared_lyrics_allowed( $first_slug, $second_slug ) {
+		$pair = array( $first_slug, $second_slug );
+		sort( $pair, SORT_STRING );
+		return array( 'first-amendment-2', 'hostile-government-take-over' ) === $pair;
+	}
+
 	/** Detect existing manual items; a match is a review flag, never an automatic merge. */
 	private static function conflicts( $song, $report ) {
 		$matches = array();
@@ -32,7 +39,10 @@ class BVOCAL_Song_Conversion {
 			$reasons = array();
 			if ( self::normalized_text( $song->post_title ) === self::normalized_text( $item->post_title ) || ( $song->post_name && $song->post_name === $item->post_name ) ) { $reasons[] = 'title or slug'; }
 			$lyrics = get_post_meta( $item->ID, BVOCAL_Repertoire::META_PREFIX . 'lyrics', true );
-			if ( $fields['lyrics'] && is_string( $lyrics ) && self::normalized_text( $fields['lyrics'] ) === self::normalized_text( $lyrics ) ) { $reasons[] = 'lyrics'; }
+			$other_source_id = (int) get_post_meta( $item->ID, self::SOURCE_META, true );
+			$other_source = $other_source_id ? get_post( $other_source_id ) : null;
+			$other_slug = $other_source && 'song' === $other_source->post_type ? $other_source->post_name : '';
+			if ( ! self::shared_lyrics_allowed( $song->post_name, $other_slug ) && $fields['lyrics'] && is_string( $lyrics ) && self::normalized_text( $fields['lyrics'] ) === self::normalized_text( $lyrics ) ) { $reasons[] = 'lyrics'; }
 			$recordings = get_post_meta( $item->ID, BVOCAL_Repertoire::META_PREFIX . 'recordings', true );
 			$existing_urls = is_array( $recordings ) ? array_column( $recordings, 'url' ) : array();
 			$score = get_post_meta( $item->ID, BVOCAL_Repertoire::META_PREFIX . 'score_url', true );
