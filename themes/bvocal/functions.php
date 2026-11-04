@@ -18,16 +18,6 @@ function bvocal_setup() {
 	add_theme_support( 'editor-styles' );
 	add_editor_style( 'assets/theme.css' );
 
-	add_theme_support(
-		'custom-logo',
-		array(
-			'height'      => 186,
-			'width'       => 537,
-			'flex-height' => true,
-			'flex-width'  => true,
-		)
-	);
-
 	register_nav_menus(
 		array(
 			'primary' => __( 'Primary Menu', 'bvocal' ),
@@ -112,13 +102,7 @@ function bvocal_render_social_links() {
 }
 
 function bvocal_render_logo_block() {
-	$custom_logo = get_custom_logo();
-
-	if ( $custom_logo ) {
-		return '<div class="bvocal-logo">' . $custom_logo . '</div>';
-	}
-
-	$logo_url = get_theme_file_uri( 'assets/images/bvocal-logo-stacked.svg' );
+	$logo_url = get_theme_file_uri( 'assets/images/bvocal-logo-stacked.png' );
 
 	return sprintf(
 		'<a class="bvocal-logo" href="%1$s" rel="home"><img src="%2$s" alt="%3$s"></a>',
