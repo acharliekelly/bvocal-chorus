@@ -28,6 +28,18 @@ $r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:heading --><h2>Lyric
 preview_expect( "First line\nSecond line" === $r['proposed']['lyrics'] && !$r['unmapped'], 'Map Verse blocks as lyrics.' );
 $r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:heading --><h2>Lyrics</h2><!-- /wp:heading --><!-- wp:preformatted --><pre class="wp-block-preformatted">First line<br>Second line</pre><!-- /wp:preformatted -->') );
 preview_expect( "First line\nSecond line" === $r['proposed']['lyrics'] && !$r['unmapped'], 'Map Preformatted blocks as lyrics.' );
+$instruction = 'Add a File block below and upload the score PDF.';
+$fixture = preview_fixture('<!-- wp:paragraph --><p>Based on an existing source.</p><!-- /wp:paragraph --><!-- wp:heading --><h2>Score</h2><!-- /wp:heading --><!-- wp:paragraph --><p>'.$instruction.'</p><!-- /wp:paragraph -->');
+$fixture->post_name = 'these-hands';
+$r = BVOCAL_Song_Preview::preview($fixture);
+preview_expect( !$r['unmapped'] && "Based on an existing source.\n\n".$instruction === $r['proposed']['notes'], 'Preserve approved These Hands instruction verbatim alongside other notes.' );
+$fixture->post_name = 'another-song';
+$r = BVOCAL_Song_Preview::preview($fixture);
+preview_expect( 1 === count($r['unmapped']) && 'possible_placeholder' === $r['unmapped'][0]['type'], 'Same instruction on other Songs remains blocked.' );
+$fixture->post_name = 'these-hands';
+$fixture->post_content = '<!-- wp:paragraph --><p>Add a File block with different instructions.</p><!-- /wp:paragraph -->';
+$r = BVOCAL_Song_Preview::preview($fixture);
+preview_expect( 1 === count($r['unmapped']), 'Different placeholder text is not automatically approved.' );
 $before = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts}") . ':' . $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta}");
 $hold = get_page_by_path( 'hold-on', OBJECT, 'song' );
 if ($hold) {

@@ -143,3 +143,12 @@ source preservation, structured fields, reruns, manual edits, source changes,
 Trash, manual duplicates, permissions, and visibility. Review actual converted
 drafts in WordPress and compare their lyrics, score/audio links, captions, and
 credits against the original Songs before publishing anything.
+
+## Approved These Hands notes exception
+
+Version 0.1.4 maps the exact paragraph “Add a File block below and upload the
+score PDF.” on the Song with slug `these-hands` into Source or notes, preserving
+the text alongside existing notes. This is an explicitly approved exception;
+other placeholder text and unsupported content remain unmapped. Run the same
+preview/conversion commands against each site's own Song. Existing converted
+items are still never overwritten by a rerun.

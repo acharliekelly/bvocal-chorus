@@ -170,7 +170,7 @@ function bvocal_render_breadcrumbs_block() {
 		);
 	} elseif ( is_archive() ) {
 		$items[] = array(
-			'label' => get_the_archive_title(),
+			'label' => is_post_type_archive( 'repertoire_item' ) ? post_type_archive_title( '', false ) : get_the_archive_title(),
 			'url'   => '',
 		);
 	}

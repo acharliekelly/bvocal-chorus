@@ -152,6 +152,12 @@ class BVOCAL_Song_Preview {
 				self::unmapped( $report, $block, 'unsupported_block', $text ); continue;
 			}
 			if ( '' === $text ) { continue; }
+			// Explicitly approved exception, matched by stable slug and exact source text.
+			if ( 'these-hands' === $song->post_name && 'core/paragraph' === $type && 'Add a File block below and upload the score PDF.' === $text ) {
+				$notes[] = $text;
+				$report['warnings'][] = 'Approved source instruction preserved in notes; review before publishing.';
+				continue;
+			}
 			if ( preg_match( '/Add a File block|upload the score PDF/i', $text ) ) {
 				self::unmapped( $report, $block, 'possible_placeholder', $text ); continue;
 			}
