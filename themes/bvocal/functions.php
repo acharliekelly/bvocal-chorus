@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BVOCAL_THEME_VERSION', '1.0.0' );
+define( 'BVOCAL_THEME_VERSION', '1.0.1' );
 
 function bvocal_setup() {
 	add_theme_support( 'title-tag' );
