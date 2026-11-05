@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BVOCAL_THEME_VERSION', '1.0.0' );
+define( 'BVOCAL_THEME_VERSION', '1.0.1' );
 
 function bvocal_setup() {
 	add_theme_support( 'title-tag' );
@@ -27,6 +27,16 @@ function bvocal_setup() {
 	);
 }
 add_action( 'after_setup_theme', 'bvocal_setup' );
+
+/** Keep the public Repertoire archive alphabetical across inherited query pages. */
+function bvocal_order_repertoire_archive( $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_post_type_archive( 'repertoire_item' ) ) {
+		return;
+	}
+	$query->set( 'orderby', array( 'title' => 'ASC', 'ID' => 'ASC' ) );
+	$query->set( 'order', 'ASC' );
+}
+add_action( 'pre_get_posts', 'bvocal_order_repertoire_archive' );
 
 function bvocal_enqueue_assets() {
 	wp_enqueue_style(
@@ -170,7 +180,7 @@ function bvocal_render_breadcrumbs_block() {
 		);
 	} elseif ( is_archive() ) {
 		$items[] = array(
-			'label' => get_the_archive_title(),
+			'label' => is_post_type_archive( 'repertoire_item' ) ? post_type_archive_title( '', false ) : get_the_archive_title(),
 			'url'   => '',
 		);
 	}
@@ -218,7 +228,6 @@ function bvocal_is_member_context() {
 		'gigs',
 		'practice-materials',
 		'teams',
-		'songs',
 		'songs-with-musical-scores',
 		'song-sheets-by-topic',
 		'tips-on-reading-musical-scores',

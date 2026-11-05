@@ -428,12 +428,31 @@ header.wp-block-template-part > .bvocal-header {
 }
 
 .bvocal-repertoire-index > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   border-bottom: 1px solid var(--wp--preset--color--contrast-2, #d7d7d7);
   margin: 0;
   padding: 0.8rem 0;
 }
 
+.bvocal-repertoire-index .wp-block-post-featured-image {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+}
+
+.bvocal-repertoire-index .wp-block-post-featured-image img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
 .bvocal-repertoire-index .wp-block-post-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 1.35rem;
   margin: 0;
 }

@@ -12,14 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class BVOCAL_Repertoire {
 	const POST_TYPE = 'repertoire_item';
 	const META_PREFIX = '_bvocal_repertoire_';
+	const DEFAULT_IMAGE_OPTION = 'bvocal_repertoire_default_image_id';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'add_settings_page' ) );
+		add_action( 'admin_init', array( __CLASS__, 'register_default_image_settings' ) );
+		add_action( 'wp_after_insert_post', array( __CLASS__, 'apply_default_featured_image' ), 20, 2 );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( __CLASS__, 'add_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_meta_boxes' ) );
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'keep_incomplete_item_as_draft' ), 10, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'render_author_required_notice' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_media_validation_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_links_validation_notice' ) );
 		add_filter( 'the_content', array( __CLASS__, 'append_public_details' ) );
 		add_action( 'admin_footer-post.php', array( __CLASS__, 'render_recording_repeater_script' ) );
 		add_action( 'admin_footer-post-new.php', array( __CLASS__, 'render_recording_repeater_script' ) );
@@ -46,7 +51,7 @@ class BVOCAL_Repertoire {
 			'has_archive' => true,
 			'rewrite'     => array( 'slug' => 'repertoire' ),
 			'menu_icon'   => 'dashicons-format-audio',
-			'supports'    => array( 'title' ),
+			'supports'    => array( 'title', 'thumbnail' ),
 		);
 	}
 
@@ -55,10 +60,96 @@ class BVOCAL_Repertoire {
 		register_post_type( $definition['post_type'], $definition );
 	}
 
+	/** Register one site-specific Media Library image as the default. */
+	public static function register_default_image_settings() {
+		register_setting( 'bvocal_repertoire_settings', self::DEFAULT_IMAGE_OPTION, array( 'type' => 'integer', 'default' => 0, 'sanitize_callback' => array( __CLASS__, 'sanitize_default_image' ) ) );
+		add_settings_section( 'bvocal_repertoire_images', 'Featured images', '__return_false', 'bvocal-repertoire-settings' );
+		add_settings_field( 'bvocal_repertoire_default_image', 'Default featured image', array( __CLASS__, 'render_default_image_field' ), 'bvocal-repertoire-settings', 'bvocal_repertoire_images' );
+	}
+
+	public static function add_settings_page() {
+		$hook = add_submenu_page( 'edit.php?post_type=' . self::POST_TYPE, 'Repertoire Settings', 'Settings', 'manage_options', 'bvocal-repertoire-settings', array( __CLASS__, 'render_settings_page' ) );
+		add_action( 'load-' . $hook, 'wp_enqueue_media' );
+	}
+
+	public static function sanitize_default_image( $value ) {
+		if ( '' === $value || 0 === $value || '0' === $value ) { return 0; }
+		$id = is_scalar( $value ) && ctype_digit( (string) $value ) ? (int) $value : 0;
+		if ( $id && wp_attachment_is_image( $id ) && 'trash' !== get_post_status( $id ) ) { return $id; }
+		if ( function_exists( 'add_settings_error' ) ) {
+			add_settings_error( self::DEFAULT_IMAGE_OPTION, 'invalid_image', 'Choose an image from the Media Library. The previous default was kept.' );
+		}
+		return (int) get_option( self::DEFAULT_IMAGE_OPTION, 0 );
+	}
+
+	public static function default_image_id() {
+		$id = (int) get_option( self::DEFAULT_IMAGE_OPTION, 0 );
+		return $id && wp_attachment_is_image( $id ) && 'trash' !== get_post_status( $id ) ? $id : 0;
+	}
+
+	/** wp_after_insert_post runs after explicit thumbnail edits, including REST saves. */
+	public static function apply_default_featured_image( $post_id, $post = null ) {
+		$post = $post ? $post : get_post( $post_id );
+		if ( ! $post || self::POST_TYPE !== $post->post_type || in_array( $post->post_status, array( 'auto-draft', 'trash' ), true ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || get_post_thumbnail_id( $post_id ) ) {
+			return false;
+		}
+		$default = self::default_image_id();
+		return $default ? (bool) set_post_thumbnail( $post_id, $default ) : false;
+	}
+
+	public static function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) { return; }
+		?>
+		<div class="wrap">
+			<h1>Repertoire Settings</h1>
+			<?php settings_errors(); ?>
+			<form action="options.php" method="post">
+				<?php settings_fields( 'bvocal_repertoire_settings' ); do_settings_sections( 'bvocal-repertoire-settings' ); submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+	public static function render_default_image_field() {
+		$id = self::default_image_id();
+		printf( '<input type="hidden" id="bvocal-default-image-id" name="%1$s" value="%2$d">', esc_attr( self::DEFAULT_IMAGE_OPTION ), $id );
+		echo '<div id="bvocal-default-image-preview">' . ( $id ? wp_get_attachment_image( $id, 'thumbnail' ) : '' ) . '</div>';
+		echo '<p><button type="button" class="button" id="bvocal-choose-default-image">Choose default image</button> <button type="button" class="button" id="bvocal-clear-default-image">Clear default</button></p>';
+		echo '<p class="description">Used when a Repertoire item is saved without a featured image. Existing images are kept. Removing an item’s image restores the default when you save. Clear this setting to disable automatic assignment.</p>';
+		?>
+		<script>
+		(function () {
+			var input = document.getElementById('bvocal-default-image-id');
+			var preview = document.getElementById('bvocal-default-image-preview');
+			document.getElementById('bvocal-choose-default-image').addEventListener('click', function () {
+				var frame = wp.media({title: 'Choose default featured image', button: {text: 'Use this image'}, multiple: false, library: {type: 'image'}});
+				frame.on('select', function () {
+					var attachment = frame.state().get('selection').first().toJSON();
+					input.value = attachment.id;
+					preview.textContent = '';
+					var image = document.createElement('img');
+					image.src = attachment.sizes && attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url;
+					image.alt = attachment.alt || '';
+					image.width = 150;
+					image.style.maxWidth = '100%';
+					image.style.height = 'auto';
+					preview.appendChild(image);
+				});
+				frame.open();
+			});
+			document.getElementById('bvocal-clear-default-image').addEventListener('click', function () {
+				input.value = 0;
+				preview.textContent = '';
+			});
+		}());
+		</script>
+		<?php
+	}
+
 	public static function add_meta_boxes() {
 		add_meta_box( 'bvocal-repertoire-info', 'Repertoire information', array( __CLASS__, 'render_information_box' ), self::POST_TYPE, 'normal', 'high' );
 		add_meta_box( 'bvocal-repertoire-lyrics', 'Lyrics', array( __CLASS__, 'render_lyrics_box' ), self::POST_TYPE, 'normal', 'default' );
-		add_meta_box( 'bvocal-repertoire-materials', 'Score and recordings', array( __CLASS__, 'render_materials_box' ), self::POST_TYPE, 'normal', 'default' );
+		add_meta_box( 'bvocal-repertoire-materials', 'Score, recordings and links', array( __CLASS__, 'render_materials_box' ), self::POST_TYPE, 'normal', 'default' );
 	}
 
 	private static function value( $post_id, $key ) {
@@ -164,6 +255,56 @@ class BVOCAL_Repertoire {
 		echo '<template id="bvocal-recording-template">';
 		self::render_recording_row( array() );
 		echo '</template>';
+		$links = self::value( $post->ID, 'links' );
+		echo '<p><strong>Links</strong></p><p>Optional performances or other resources. Each link opens in a new tab; no player is embedded. Use complete http:// or https:// URLs.</p><div id="bvocal-repertoire-links">';
+		foreach ( is_array( $links ) ? $links : array() as $link ) {
+			self::render_link_row( $link );
+		}
+		echo '</div><p><button type="button" class="button" id="bvocal-add-link">Add link</button></p><template id="bvocal-link-template">';
+		self::render_link_row( array() );
+		echo '</template>';
+	}
+
+	/** Links accept web URLs, including locally hosted performance files. */
+	public static function normalize_link( $link ) {
+		if ( ! is_array( $link ) || ! isset( $link['url'] ) || ! is_string( $link['url'] ) ) {
+			return new WP_Error( 'invalid_link', 'Use a complete http:// or https:// URL.' );
+		}
+		$url = esc_url_raw( trim( $link['url'] ), array( 'http', 'https' ) );
+		$scheme = wp_parse_url( trim( $link['url'] ), PHP_URL_SCHEME );
+		if ( ! in_array( strtolower( (string) $scheme ), array( 'http', 'https' ), true ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error( 'invalid_link', 'Use a complete http:// or https:// URL.' );
+		}
+		$label = isset( $link['label'] ) && is_string( $link['label'] ) ? sanitize_text_field( $link['label'] ) : '';
+		return array( 'label' => $label, 'url' => $url );
+	}
+
+	/** Render optional links without video or audio embeds. */
+	public static function links_markup( $links ) {
+		$items = '';
+		foreach ( is_array( $links ) ? $links : array() as $link ) {
+			$link = self::normalize_link( $link );
+			if ( is_wp_error( $link ) ) { continue; }
+			$label = '' !== $link['label'] ? $link['label'] : $link['url'];
+			$items .= '<li><a href="' . esc_url( $link['url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a></li>';
+		}
+		return $items ? '<section><h2>Links</h2><ul class="bvocal-repertoire__links">' . $items . '</ul></section>' : '';
+	}
+
+	private static function render_link_row( $link ) {
+		$label = isset( $link['label'] ) ? $link['label'] : '';
+		$url = isset( $link['url'] ) ? $link['url'] : '';
+		printf( '<p class="bvocal-link-row"><label>Label <input type="text" name="bvocal_repertoire[link_label][]" value="%1$s" placeholder="e.g. Community performance"></label> <label>URL <input class="regular-text" type="url" name="bvocal_repertoire[link_url][]" value="%2$s" placeholder="https://..."></label> <button type="button" class="button-link-delete bvocal-remove-link">Remove</button></p>', esc_attr( $label ), esc_attr( $url ) );
+	}
+
+	public static function add_links_validation_notice( $location ) {
+		return add_query_arg( 'bvocal_repertoire_links_error', 'invalid_link', $location );
+	}
+
+	public static function render_links_validation_notice() {
+		if ( isset( $_GET['bvocal_repertoire_links_error'] ) && 'invalid_link' === $_GET['bvocal_repertoire_links_error'] ) {
+			echo '<div class="notice notice-error"><p>Links were not saved; the previous list was kept. Use complete http:// or https:// URLs.</p></div>';
+		}
 	}
 
 	private static function render_recording_row( $recording ) {
@@ -254,6 +395,21 @@ class BVOCAL_Repertoire {
 			}
 		}
 		update_post_meta( $post_id, self::META_PREFIX . 'recordings', $recordings );
+		$links = array();
+		$labels = isset( $submitted['link_label'] ) && is_array( $submitted['link_label'] ) ? $submitted['link_label'] : array();
+		$urls = isset( $submitted['link_url'] ) && is_array( $submitted['link_url'] ) ? $submitted['link_url'] : array();
+		foreach ( array_unique( array_merge( array_keys( $labels ), array_keys( $urls ) ) ) as $index ) {
+			$label = isset( $labels[$index] ) ? $labels[$index] : '';
+			$url = isset( $urls[$index] ) ? $urls[$index] : '';
+			if ( is_string( $label ) && is_string( $url ) && '' === trim( $label ) && '' === trim( $url ) ) { continue; }
+			$link = self::normalize_link( array( 'label' => $label, 'url' => $url ) );
+			if ( is_wp_error( $link ) ) {
+				add_filter( 'redirect_post_location', array( __CLASS__, 'add_links_validation_notice' ) );
+				return;
+			}
+			$links[] = $link;
+		}
+		update_post_meta( $post_id, self::META_PREFIX . 'links', $links );
 	}
 
 	public static function append_public_details( $content ) {
@@ -299,6 +455,7 @@ class BVOCAL_Repertoire {
 			}
 			$output .= '</ul></section>';
 		}
+		$output .= self::links_markup( self::value( $post_id, 'links' ) );
 		return $content . $output . '</div>';
 	}
 
@@ -315,6 +472,12 @@ class BVOCAL_Repertoire {
 				}
 				if (event.target.classList.contains('bvocal-remove-recording')) {
 					event.target.closest('.bvocal-recording-row').remove();
+				}
+				if (event.target.id === 'bvocal-add-link') {
+					document.querySelector('#bvocal-repertoire-links').insertAdjacentHTML('beforeend', document.querySelector('#bvocal-link-template').innerHTML);
+				}
+				if (event.target.classList.contains('bvocal-remove-link')) {
+					event.target.closest('.bvocal-link-row').remove();
 				}
 				if (event.target.classList.contains('bvocal-media-picker')) {
 					var button = event.target;
