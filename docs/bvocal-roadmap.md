@@ -19,6 +19,26 @@ Live content remains authoritative. Refreshing a local content snapshot from
 live is allowed. Moving a local or staging database, uploads directory, or
 whole site back to live is not part of the normal workflow.
 
+## Current rollout sequence
+
+1. Complete all currently planned changes on staging, including their dependent
+   theme, plugin, page-content, navigation, asset, and configuration changes.
+2. Verify the complete staging experience, then demo staging to stakeholders.
+3. Obtain approval for the complete release before changing live.
+4. Execute one coordinated live release, following a documented dependency
+   order within the release window. Do not stagger dependent parts across
+   separate releases or leave visitors using an incomplete combination.
+5. Verify the complete live experience and retain the scoped rollback steps.
+
+The deployment lanes below describe how each part travels, not separate live
+release schedules. Rehearse and document every part on staging first. The live
+release still deploys code and repeats scoped changes against live's own
+content; it does not copy staging's database or whole site back to live.
+
+Repertoire migration to staging is complete, including reviewed corrections,
+publication, and featured-image setup. Continue the remaining planned staging
+work before the stakeholder demo; Repertoire is not a separate live release.
+
 ## Deployment lanes
 
 Choose one lane before starting a change. If a change needs more than one
@@ -34,7 +54,8 @@ existing live content.
    `npm run package:staging`.
 3. Upload the custom theme or plugin ZIP to staging and verify the relevant
    user workflow.
-4. Obtain explicit approval before installing the same code on live.
+4. Include the verified code in the coordinated live release after stakeholder
+   approval of the complete staging experience.
 5. Verify the live workflow after deployment.
 
 ### 2. Code plus live configuration
@@ -125,9 +146,10 @@ recreate the site from a local snapshot.
 - Past Events: add search and simpler media linking from the supported video
   and social sources.
 
-Each item is its own feature branch and release decision. Do not combine an
-unrelated theme migration with a workflow change merely because both are ready
-at the same time.
+Keep feature work in focused branches for understandable review. Bring all
+currently planned changes together on staging for the stakeholder demo and
+approved coordinated live release; separate branches do not imply staggered
+live deployment.
 
 ### Phase 4 — Maintainability
 
@@ -142,7 +164,10 @@ at the same time.
 Before a custom-code change reaches live, confirm:
 
 - the relevant local checks pass;
-- the exact ZIPs are verified on staging;
+- all currently planned changes, including the exact code packages and scoped
+  content/configuration steps, are verified together on staging;
+- stakeholders have seen the complete staging demo and approved the release;
+- the coordinated live checklist orders dependent changes and includes rollback;
 - staging did not send email or contact MailerLite unexpectedly;
 - any live configuration or content migration is written down and approved;
 - the live deployment has explicit approval; and
