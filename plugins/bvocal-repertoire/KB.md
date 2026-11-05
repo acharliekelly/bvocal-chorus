@@ -284,3 +284,9 @@ source/target drift, reruns, title/slug changes, structured recording labels,
 media validation, schema restrictions and permission/publication guards. Before
 live approval, rehearse the same manifest and command against staging's own
 converted drafts and verify its report, credits, lyrics and media manually.
+
+## Empty headings and destination baselines (0.1.8)
+
+The Song preview ignores empty heading blocks without changing the active section. Nonempty unknown headings remain unmapped. Original blocks are never edited.
+
+A destination's source extraction can differ from the local audit (for example, a missing recording or an event-specific recording). Record the exact inspected extraction in a separate destination manifest's baseline_fields, retaining the approved reviewed_fields. Keep the original audit unchanged. Preview and validate replacement media against that destination's catalogue before applying with a new private backup. Never generate and apply an unreviewed baseline merely to bypass a drift check; check only the specific approved differences. Live needs its own independent inspection.

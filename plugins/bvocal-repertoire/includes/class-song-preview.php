@@ -103,6 +103,8 @@ class BVOCAL_Song_Preview {
 			if ( in_array( $type, array( 'core/separator', 'core/spacer' ), true ) ) { continue; }
 			$is_heading = 'core/heading' === $type || ( 'core/paragraph' === $type && preg_match( '#^\s*<p[^>]*>\s*<strong>\s*lyrics\s*</strong>\s*</p>\s*$#i', $html ) );
 			if ( $is_heading ) {
+				// Empty editor headings contain no content and do not change section.
+				if ( '' === $text ) { continue; }
 				$heading = strtolower( trim( $text, " :\t\n\r" ) );
 				$sections = array( 'lyrics' => 'lyrics', 'score' => 'score', 'practice recordings' => 'audio', 'practice recording' => 'audio', 'recordings' => 'audio', 'video' => 'links', 'videos' => 'links', 'links' => 'links' );
 				if ( '' !== $label ) { $notes[] = $label; $report['warnings'][] = 'Recording section text needs review.'; }

@@ -4,6 +4,11 @@ require_once dirname( __DIR__ ) . '/includes/class-song-preview.php';
 global $wpdb;
 function preview_expect( $ok, $message ) { if ( ! $ok ) { throw new RuntimeException( $message ); } }
 function preview_fixture( $content ) { return (object) array( 'ID'=>0, 'post_name'=>'fixture', 'post_title'=>'Fixture', 'post_status'=>'publish', 'post_password'=>'', 'post_content'=>$content ); }
+$empty_heading = '<!-- wp:heading --><h2 class="wp-block-heading"></h2><!-- /wp:heading -->';
+$r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:heading --><h2>Lyrics</h2><!-- /wp:heading --><!-- wp:paragraph --><p>First line</p><!-- /wp:paragraph -->'.$empty_heading.'<!-- wp:paragraph --><p>Second line</p><!-- /wp:paragraph -->') );
+preview_expect( !$r['unmapped'] && "First line\n\nSecond line" === $r['proposed']['lyrics'], 'Empty heading preserves the active section without blocking conversion.' );
+$r = BVOCAL_Song_Preview::preview( preview_fixture('<!-- wp:heading --><h2>Unrecognized section</h2><!-- /wp:heading -->') );
+preview_expect( 1 === count($r['unmapped']), 'Nonempty unknown heading still requires review.' );
 $body = '<!-- wp:group --><div class="wp-block-group"><!-- wp:paragraph --><p>By Heidi Wilson / arr. by L. Gallatin</p><!-- /wp:paragraph --><!-- wp:heading --><h2>Lyrics</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Hold on<br>my dear ones</p><!-- /wp:paragraph --><!-- wp:heading --><h2>Video</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Watch the performance <a href="https://www.youtube.com/shorts/example">here</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->';
 $r = BVOCAL_Song_Preview::preview( preview_fixture( $body ) );
 preview_expect( 'Heidi Wilson' === $r['proposed']['author'], 'Split explicit author from arranger.' );
